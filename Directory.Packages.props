@@ -1,9 +1,12 @@
 <Project>
-    <PropertyGroup>
-        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    </PropertyGroup>
-    <ItemGroup>
-        <!-- Global -->
-        <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.9.0.115408" />
-    </ItemGroup>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Global -->
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.9.0.115408" />
+    <!-- Aspire -->
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.3.1" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="9.3.1" />
+  </ItemGroup>
 </Project>

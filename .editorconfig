@@ -184,7 +184,7 @@ dotnet_naming_style.begins_with_i.capitalization = pascal_case
 ### Custom rules ###
 
 # CA2007: Do not directly await a Task
-dotnet_diagnostic.CA2007.severity = none 
+dotnet_diagnostic.CA2007.severity = none
 
 ### Generated code ###
 
