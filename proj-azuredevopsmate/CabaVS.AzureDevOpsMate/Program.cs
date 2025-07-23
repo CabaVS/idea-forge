@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Xml.Linq;
 using CabaVS.AzureDevOpsMate.Configuration;
 using CabaVS.AzureDevOpsMate.Constants;
+using CabaVS.AzureDevOpsMate.Models;
 using CabaVS.Shared.Infrastructure;
 using Microsoft.Extensions.Options;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -158,18 +159,39 @@ app.MapGet(
         } while (toTraverse.Count > 0);
 
         var groupedByAssignee = collected
-            .Select(wi => new
+            .Select(wi =>
             {
-                Assignee = wi.Fields.GetValueOrDefault(FieldNames.AssignedTo) is IdentityRef identityRef
-                    ? identityRef.UniqueName.Split('@').FirstOrDefault(string.Empty)
-                    : string.Empty,
-                RemainingWork = wi.Fields.GetCastedValueOrDefault(FieldNames.RemainingWork, 0.0)
+                var tags = wi.Fields.GetCastedValueOrDefault(FieldNames.Tags, string.Empty)?
+                    .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+                
+                return new
+                {
+                    Assignee = wi.Fields.GetValueOrDefault(FieldNames.AssignedTo) is IdentityRef identityRef
+                        ? identityRef.UniqueName.Split('@').FirstOrDefault(string.Empty)
+                        : string.Empty,
+                    RemainingWork = wi.Fields.GetCastedValueOrDefault(FieldNames.RemainingWork, 0.0),
+                    RemainingWorkType = tags.Contains("Functionality")
+                        ? RemainingWorkType.Functionality
+                        : tags.Contains("Requirements")
+                            ? RemainingWorkType.Requirements
+                            : tags.Contains("Technical") || tags.Contains("Non-functional requirements")
+                                ? RemainingWorkType.Technical
+                                : RemainingWorkType.Other
+                };
             })
             .GroupBy(x => x.Assignee)
-            .Select(g => new
+            .Select(g =>
             {
-                Assignee = string.IsNullOrWhiteSpace(g.Key) ? "UNKNOWN ASSIGNEE" : g.Key.ToUpperInvariant(),
-                TotalRemainingWork = g.Sum(x => x.RemainingWork)
+                var lookupByType = g.ToLookup(x => x.RemainingWorkType);
+                return new
+                {
+                    Assignee = string.IsNullOrWhiteSpace(g.Key) ? "UNKNOWN ASSIGNEE" : g.Key.ToUpperInvariant(),
+                    TotalRemainingWork = new RemainingWorkModel(
+                        lookupByType[RemainingWorkType.Functionality].Sum(x => x.RemainingWork),
+                        lookupByType[RemainingWorkType.Requirements].Sum(x => x.RemainingWork),
+                        lookupByType[RemainingWorkType.Technical].Sum(x => x.RemainingWork),
+                        lookupByType[RemainingWorkType.Other].Sum(x => x.RemainingWork))
+                };
             })
             .OrderByDescending(x => x.TotalRemainingWork)
             .ThenBy(x => x.Assignee);
@@ -185,7 +207,7 @@ app.MapGet(
             .Select(g => new
             {
                 Team = g.Key,
-                TotalRemainingWork = g.Sum(x => x.RemainingWork)
+                TotalRemainingWork = g.Select(x => x.RemainingWork).Sum()
             })
             .OrderByDescending(x => x.TotalRemainingWork)
             .ThenBy(x => x.Team);
