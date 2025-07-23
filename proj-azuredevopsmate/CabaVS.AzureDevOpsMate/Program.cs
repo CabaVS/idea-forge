@@ -47,53 +47,156 @@ WebApplication app = builder.Build();
 // Analyzes the 'ReportingInfo' HTML field of a specified Azure DevOps work item and returns total effort grouped by team
 app.MapGet(
     "api/work-items/{workItemId:int}/reporting-info",
-    async (int workItemId, WorkItemTrackingHttpClient workItemClient, IOptions<TeamsDefinitionOptions> teamsDefinitionOptions) =>
-{
-    WorkItem? workItem = await workItemClient.GetWorkItemAsync(workItemId);
-    if (workItem is null)
+    async (
+        int workItemId,
+        WorkItemTrackingHttpClient workItemClient,
+        IOptions<TeamsDefinitionOptions> teamsDefinitionOptions,
+        CancellationToken cancellationToken) =>
     {
-        return Results.NotFound();
-    }
-    
-    var reportingInfo = workItem.Fields.GetCastedValueOrDefault(FieldNames.ReportingInfo, string.Empty);
-    if (string.IsNullOrWhiteSpace(reportingInfo))
+        WorkItem? workItem = await workItemClient.GetWorkItemAsync(
+            workItemId,
+            fields: [FieldNames.ReportingInfo],
+            cancellationToken: cancellationToken);
+        if (workItem is null)
+        {
+            return Results.NotFound();
+        }
+
+        var reportingInfo = workItem.Fields.GetCastedValueOrDefault(FieldNames.ReportingInfo, string.Empty);
+        if (string.IsNullOrWhiteSpace(reportingInfo))
+        {
+            return Results.Ok(Array.Empty<object>());
+        }
+
+        var sanitizedHtml = reportingInfo.Replace("&nbsp;", " ", StringComparison.InvariantCulture);
+        var parsed = XDocument.Parse(sanitizedHtml)
+            .Descendants("tr")
+            .Select(tr => tr.Elements("td").Select(td => td.Value.Trim()).ToArray())
+            .Where(row => row is { Length: 4 })
+            .Select(row => new
+            {
+                Date = DateOnly.ParseExact(row[0], "dd.MM.yyyy", CultureInfo.InvariantCulture),
+                Reporter = row[1],
+                Amount = double.Parse(row[2].Replace(",", ".", StringComparison.InvariantCulture),
+                    CultureInfo.InvariantCulture),
+                Comment = row[3]
+            });
+
+        var groupedByReporter = parsed.GroupBy(x => x.Reporter)
+            .Select(g => new { Reporter = g.Key, Total = g.Sum(x => x.Amount) })
+            .OrderByDescending(x => x.Total)
+            .ThenBy(x => x.Reporter);
+        var groupedByTeam = groupedByReporter
+            .Select(x =>
+            {
+                var team = teamsDefinitionOptions.Value
+                    .Teams
+                    .SingleOrDefault(y => y.Value.Contains(x.Reporter),
+                        new KeyValuePair<string, HashSet<string>>($"UNKNOWN TEAM on {x.Reporter}", []))
+                    .Key;
+                return new { Team = team, Amount = x.Total };
+            })
+            .GroupBy(x => x.Team)
+            .Select(g => new { Team = g.Key, Total = g.Sum(x => x.Amount) })
+            .OrderByDescending(x => x.Total)
+            .ThenBy(x => x.Team);
+
+        return Results.Ok(groupedByTeam);
+    });
+
+// Traverses a hierarchy of work items and groups a sum of remaining work by a team
+app.MapGet(
+    "api/work-items/{workItemId:int}/remaining-work",
+    async (
+        int workItemId,
+        WorkItemTrackingHttpClient workItemClient,
+        IOptions<TeamsDefinitionOptions> teamsDefinitionOptions,
+        CancellationToken cancellationToken) =>
     {
-        return Results.Ok(Array.Empty<object>());
-    }
-
-    var sanitizedHtml = reportingInfo.Replace("&nbsp;", " ", StringComparison.InvariantCulture);
-    var parsed = XDocument.Parse(sanitizedHtml)
-        .Descendants("tr")
-        .Select(tr => tr.Elements("td").Select(td => td.Value.Trim()).ToArray())
-        .Where(row => row is { Length: 4 })
-        .Select(row => new
+        WorkItem? root = await workItemClient.GetWorkItemAsync(
+            workItemId,
+            fields: [FieldNames.Title],
+            cancellationToken: cancellationToken);
+        if (root is null)
         {
-            Date = DateOnly.ParseExact(row[0], "dd.MM.yyyy", CultureInfo.InvariantCulture),
-            Reporter = row[1],
-            Amount = double.Parse(row[2].Replace(",", ".", StringComparison.InvariantCulture), CultureInfo.InvariantCulture),
-            Comment = row[3]
-        });
+            return Results.NotFound();
+        }
 
-    var groupedByReporter = parsed.GroupBy(x => x.Reporter)
-        .Select(g => new { Reporter = g.Key, Total = g.Sum(x => x.Amount) })
-        .OrderByDescending(x => x.Total)
-        .ThenBy(x => x.Reporter);
-    var groupedByTeam = groupedByReporter
-        .Select(x =>
+        var toTraverse = new HashSet<int> { root.Id!.Value };
+        var collected = new List<WorkItem>();
+
+        do
         {
-            var team = teamsDefinitionOptions.Value
-                .Teams
-                .SingleOrDefault(y => y.Value.Contains(x.Reporter),
-                    new KeyValuePair<string, HashSet<string>>($"UNKNOWN TEAM on {x.Reporter}", []))
-                .Key;
-            return new { Team = team, Amount = x.Total };
-        })
-        .GroupBy(x => x.Team)
-        .Select(g => new { Team = g.Key, Total = g.Sum(x => x.Amount) })
-        .OrderByDescending(x => x.Total)
-        .ThenBy(x => x.Team);
-    
-    return Results.Ok(groupedByTeam);
-});
+            var currentBatch = (await Task.WhenAll(toTraverse
+                .Chunk(200)
+                .Select(batch => workItemClient.GetWorkItemsAsync(
+                    ids: batch,
+                    expand: WorkItemExpand.Relations,
+                    errorPolicy: WorkItemErrorPolicy.Omit,
+                    cancellationToken: cancellationToken))))
+                .SelectMany(x => x)
+                .DistinctBy(x => x.Id)
+                .ToList();
+
+            IEnumerable<WorkItem> tasksOrBugs = currentBatch
+                .Where(wi => wi.Fields.GetCastedValueOrDefault(FieldNames.WorkItemType, string.Empty) is "Task" or "Bug")
+                .ToArray();
+            IEnumerable<WorkItem> otherTypes = currentBatch
+                .ExceptBy(tasksOrBugs.Select(wi => wi.Id), wi => wi.Id)
+                .ToArray();
+
+            collected.AddRange(
+                tasksOrBugs
+                    .Where(wi => wi.Fields.GetCastedValueOrDefault(FieldNames.State, string.Empty) is not "Closed" and not "Removed"));
+
+            toTraverse = otherTypes
+                .Where(wi => wi.Relations is { Count: > 0 })
+                .SelectMany(wi => wi.Relations)
+                .Where(r => r.Rel == RelationshipNames.ParentToChild)
+                .Select(r => int.Parse(r.Url.Split('/').LastOrDefault() ?? string.Empty, CultureInfo.InvariantCulture))
+                .ToHashSet();
+        } while (toTraverse.Count > 0);
+
+        var groupedByAssignee = collected
+            .Select(wi => new
+            {
+                Assignee = wi.Fields.GetValueOrDefault(FieldNames.AssignedTo) is IdentityRef identityRef
+                    ? identityRef.UniqueName.Split('@').FirstOrDefault(string.Empty)
+                    : string.Empty,
+                RemainingWork = wi.Fields.GetCastedValueOrDefault(FieldNames.RemainingWork, 0.0)
+            })
+            .GroupBy(x => x.Assignee)
+            .Select(g => new
+            {
+                Assignee = string.IsNullOrWhiteSpace(g.Key) ? "UNKNOWN ASSIGNEE" : g.Key.ToUpperInvariant(),
+                TotalRemainingWork = g.Sum(x => x.RemainingWork)
+            })
+            .OrderByDescending(x => x.TotalRemainingWork)
+            .ThenBy(x => x.Assignee);
+        var groupedByTeam = groupedByAssignee
+            .Select(x => new
+            {
+                Team = teamsDefinitionOptions.Value.Teams.SingleOrDefault(
+                    y => y.Value.Contains(x.Assignee),
+                    new KeyValuePair<string, HashSet<string>>($"UNKNOWN TEAM on {x.Assignee}", [])).Key,
+                RemainingWork = x.TotalRemainingWork
+            })
+            .GroupBy(x => x.Team)
+            .Select(g => new
+            {
+                Team = g.Key,
+                TotalRemainingWork = g.Sum(x => x.RemainingWork)
+            })
+            .OrderByDescending(x => x.TotalRemainingWork)
+            .ThenBy(x => x.Team);
+        
+        return Results.Ok(
+            new
+            {
+                Id = root.Id!.Value,
+                Title = root.Fields.GetCastedValueOrDefault(FieldNames.Title, string.Empty),
+                Report = groupedByTeam
+            });
+    });
 
 await app.RunAsync();
