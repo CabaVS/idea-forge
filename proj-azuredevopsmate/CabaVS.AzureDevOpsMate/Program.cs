@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Xml.Linq;
 using CabaVS.AzureDevOpsMate.Configuration;
 using CabaVS.AzureDevOpsMate.Constants;
+using CabaVS.AzureDevOpsMate.Extensions;
 using CabaVS.AzureDevOpsMate.Models;
 using CabaVS.Shared.Infrastructure;
 using Microsoft.Extensions.Options;
@@ -170,13 +171,7 @@ app.MapGet(
                         ? identityRef.UniqueName.Split('@').FirstOrDefault(string.Empty)
                         : string.Empty,
                     RemainingWork = wi.Fields.GetCastedValueOrDefault(FieldNames.RemainingWork, 0.0),
-                    RemainingWorkType = tags.Contains("Functionality")
-                        ? RemainingWorkType.Functionality
-                        : tags.Contains("Requirements")
-                            ? RemainingWorkType.Requirements
-                            : tags.Contains("Technical") || tags.Contains("Non-functional requirements")
-                                ? RemainingWorkType.Technical
-                                : RemainingWorkType.Other
+                    RemainingWorkType = tags.DetermineFromTags()
                 };
             })
             .GroupBy(x => x.Assignee)
