@@ -183,6 +183,18 @@ dotnet_naming_style.begins_with_i.capitalization = pascal_case
 
 ### Custom rules ###
 
+# IDE0008: Use explicit type instead of 'var'
+dotnet_diagnostic.IDE0008.severity = suggestion
+
+# IDE0046: 'if' statement can be simplified
+dotnet_diagnostic.IDE0046.severity = suggestion
+
+# CA1716: Identifiers should not match keywords
+dotnet_diagnostic.CA1716.severity = suggestion
+
+# CA1812: Avoid uninstantiated internal classes
+dotnet_diagnostic.CA1812.severity = suggestion
+
 # CA2007: Do not directly await a Task
 dotnet_diagnostic.CA2007.severity = none
 

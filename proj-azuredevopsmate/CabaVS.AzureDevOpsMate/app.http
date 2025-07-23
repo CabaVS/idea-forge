@@ -1,0 +1,2 @@
+﻿@workItemId = 47096
+https://localhost:5025/api/work-items/{{workItemId}}/reporting-info

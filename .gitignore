@@ -4,3 +4,4 @@ obj/
 
 # IDE: Rider
 .idea/
+*.DotSettings.user

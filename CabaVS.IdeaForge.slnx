@@ -6,6 +6,9 @@
   <Folder Name="/Projects/Azure DevOps Mate/">
     <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" Type="Classic C#" />
   </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="shared\CabaVS.Shared.Infrastructure\CabaVS.Shared.Infrastructure.csproj" Type="Classic C#" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".gitignore" />
