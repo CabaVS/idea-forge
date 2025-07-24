@@ -171,7 +171,9 @@ app.MapGet(
                         ? identityRef.UniqueName.Split('@').FirstOrDefault(string.Empty)
                         : string.Empty,
                     RemainingWork = wi.Fields.GetCastedValueOrDefault(FieldNames.RemainingWork, 0.0),
-                    RemainingWorkType = tags.DetermineFromTags()
+                    RemainingWorkType = wi.Fields.GetCastedValueOrDefault(FieldNames.WorkItemType, string.Empty) is "Bug"
+                        ? RemainingWorkType.Bugs
+                        : tags.DetermineFromTags()
                 };
             })
             .GroupBy(x => x.Assignee)
@@ -182,6 +184,7 @@ app.MapGet(
                 {
                     Assignee = string.IsNullOrWhiteSpace(g.Key) ? "UNKNOWN ASSIGNEE" : g.Key.ToUpperInvariant(),
                     TotalRemainingWork = new RemainingWorkModel(
+                        lookupByType[RemainingWorkType.Bugs].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Functionality].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Requirements].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Technical].Sum(x => x.RemainingWork),

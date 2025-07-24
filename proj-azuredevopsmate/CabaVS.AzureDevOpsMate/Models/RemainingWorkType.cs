@@ -2,6 +2,7 @@
 
 internal enum RemainingWorkType
 {
+    Bugs,
     Functionality,
     Requirements,
     Technical,
