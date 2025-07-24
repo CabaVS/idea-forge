@@ -1,0 +1,14 @@
+# Build output folders
+bin/
+obj/
+
+# Git
+.git/
+.gitignore
+
+# GitHub
+.github/
+
+# IDE: Rider
+.idea/
+*.DotSettings.user

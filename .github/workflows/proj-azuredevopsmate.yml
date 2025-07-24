@@ -1,0 +1,67 @@
+name: Project - Azure DevOps Mate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - 'global.json'
+      - 'shared/CabaVS.Shared.Infrastructure/**'
+      - '.github/workflows/proj-azuredevopsmate.yml'
+      - 'proj.azuredevopsmate.Dockerfile'
+      - 'proj-azuredevopsmate/**'
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  BUILD_CONFIGURATION: "Release"
+  DOCKER_IMAGE_NAME: "proj-azuredevopsmate"
+  DOCKERFILE_PATH: "./proj.azuredevopsmate.Dockerfile"
+  PATH_TO_CSPROJ: "./proj-azuredevopsmate/CabaVS.AzureDevOpsMate/CabaVS.AzureDevOpsMate.csproj"
+  PATH_TO_GLOBAL_JSON: "./global.json"
+
+jobs:
+  build:
+    name: Build project
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ${{ env.PATH_TO_GLOBAL_JSON }}
+
+      - name: Restore
+        run: dotnet restore ${{ env.PATH_TO_CSPROJ }}
+
+      - name: Build
+        run: dotnet build ${{ env.PATH_TO_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+  
+  build-image:
+    name: Build image
+    needs: [build]
+    runs-on: ubuntu-latest
+    
+    outputs:
+      sha_tag: ${{ steps.vars.outputs.sha_tag }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tags
+        id: vars
+        run: |
+          echo "sha_tag=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build -f ${{ env.DOCKERFILE_PATH }} \
+            -t ${{ env.DOCKER_IMAGE_NAME }}:latest \
+            -t ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }} .

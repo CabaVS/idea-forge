@@ -15,5 +15,8 @@
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
     <File Path="global.json" />
+    <File Path="proj.azuredevopsmate.Dockerfile" />
+    <File Path=".dockerignore" />
+    <File Path=".github\workflows\proj-azuredevopsmate.yml" />
   </Folder>
 </Solution>
