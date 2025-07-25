@@ -11,3 +11,4 @@ publish/
 .terraform/
 .terraform.*
 *.tfvars
+*.tfbackend

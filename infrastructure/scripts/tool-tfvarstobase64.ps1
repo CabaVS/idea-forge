@@ -4,9 +4,9 @@ param (
 
 $folderPath = Resolve-Path -Path $Folder
 
-$tfvarsFiles = Get-ChildItem -Path $folderPath -Filter *.tfvars -Recurse
+$tfFiles = Get-ChildItem -Path $folderPath -Recurse -Include *.tfvars, *.tfbackend
 
-foreach ($file in $tfvarsFiles) {
+foreach ($file in $tfFiles) {
     Write-Output $file.Name
     $contentBytes = [System.IO.File]::ReadAllBytes($file.FullName)
     [Convert]::ToBase64String($contentBytes)
