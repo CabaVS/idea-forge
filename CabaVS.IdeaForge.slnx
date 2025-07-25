@@ -2,6 +2,10 @@
   <Folder Name="/Aspire/">
     <Project Path="aspire\CabaVS.IdeaForge.AppHost\CabaVS.IdeaForge.AppHost.csproj" Type="Classic C#" />
   </Folder>
+  <Folder Name="/Infrastructure/" />
+  <Folder Name="/Infrastructure/Scripts/">
+    <File Path="infrastructure\scripts\pre-deployment.ps1" />
+  </Folder>
   <Folder Name="/Projects/" />
   <Folder Name="/Projects/Azure DevOps Mate/">
     <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" Type="Classic C#" />
