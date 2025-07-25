@@ -5,6 +5,11 @@
   <Folder Name="/Infrastructure/" />
   <Folder Name="/Infrastructure/Scripts/">
     <File Path="infrastructure\scripts\pre-deployment.ps1" />
+    <File Path="infrastructure\scripts\pre-deployment-entraid.ps1" />
+    <File Path="infrastructure\scripts\tool-tfvarstobase64.ps1" />
+  </Folder>
+  <Folder Name="/Infrastructure/Terraform/">
+    <File Path="infrastructure\terraform\main.tf" />
   </Folder>
   <Folder Name="/Projects/" />
   <Folder Name="/Projects/Azure DevOps Mate/">
@@ -22,5 +27,6 @@
     <File Path="proj.azuredevopsmate.Dockerfile" />
     <File Path=".dockerignore" />
     <File Path=".github\workflows\proj-azuredevopsmate.yml" />
+    <File Path=".github\workflows\infrastructure.yml" />
   </Folder>
 </Solution>

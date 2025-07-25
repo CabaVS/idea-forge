@@ -6,3 +6,8 @@ publish/
 # IDE: Rider
 .idea/
 *.DotSettings.user
+
+# Terraform
+.terraform/
+.terraform.*
+*.tfvars
