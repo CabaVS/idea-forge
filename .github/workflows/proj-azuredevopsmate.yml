@@ -43,6 +43,15 @@ jobs:
 
       - name: Build
         run: dotnet build ${{ env.PATH_TO_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+        
+      - name: Publish
+        run: dotnet publish ${{ env.PATH_TO_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build -o ./publish
+  
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-publish
+          path: ./publish
   
   build-image:
     name: Build image
@@ -54,6 +63,12 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-publish
+          path: ./publish
 
       - name: Set image tags
         id: vars

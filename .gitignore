@@ -1,6 +1,7 @@
-# Build output folders
+# Build and publish output folders
 bin/
 obj/
+publish/
 
 # IDE: Rider
 .idea/
