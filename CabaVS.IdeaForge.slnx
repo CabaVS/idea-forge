@@ -7,6 +7,7 @@
     <File Path="infrastructure\scripts\pre-deployment.ps1" />
     <File Path="infrastructure\scripts\pre-deployment-entraid.ps1" />
     <File Path="infrastructure\scripts\tool-tfvarstobase64.ps1" />
+    <File Path="infrastructure\scripts\post-deployment-entraid.ps1" />
   </Folder>
   <Folder Name="/Infrastructure/Terraform/">
     <File Path="infrastructure\terraform\main.tf" />

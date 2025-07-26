@@ -53,13 +53,18 @@ jobs:
           name: app-publish
           path: ./publish
   
-  build-image:
-    name: Build image
+  push-image:
+    environment: production
+    name: Push image to ACR
     needs: [build]
     runs-on: ubuntu-latest
     
     outputs:
       sha_tag: ${{ steps.vars.outputs.sha_tag }}
+    
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
       - uses: actions/checkout@v4
@@ -78,5 +83,20 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -f ${{ env.DOCKERFILE_PATH }} \
-            -t ${{ env.DOCKER_IMAGE_NAME }}:latest \
-            -t ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }} .
+            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest \
+            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }} .
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Docker Login to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Push image to ACR
+        run: |
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }}

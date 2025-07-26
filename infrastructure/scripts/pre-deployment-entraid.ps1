@@ -15,10 +15,7 @@ param(
 
     # GitHub environment to allow OIDC from (e.g., production)
     [Parameter(Mandatory = $true)]
-    [string] $GitHubEnv,
-
-    [Parameter(Mandatory = $true)]
-    [string] $StorageAccountName
+    [string] $GitHubEnv
 )
 
 $ErrorActionPreference = 'Stop'
@@ -92,14 +89,12 @@ if ($LASTEXITCODE -ne 0) {
     throw "Failed to add federated identity credential for '$Subject'"
 }
 
-$Scope = "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName"
-
-Write-Host "-> Assigning required roles to SP at scope: $Scope"
+Write-Host "-> Assigning required roles to SP $SpObjectId"
 
 az role assignment create `
     --assignee-object-id $SpObjectId `
     --role "Contributor" `
-    --scope $Scope | Out-Null
+    --scope "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName" | Out-Null
 
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to assign a role 'Contributor' for SP"
@@ -108,7 +103,7 @@ if ($LASTEXITCODE -ne 0) {
 az role assignment create `
     --assignee-object-id $SpObjectId `
     --role "User Access Administrator" `
-    --scope $Scope | Out-Null
+    --scope "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName" | Out-Null
 
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to assign a role 'User Access Administrator' for SP"
@@ -124,7 +119,7 @@ $TerraformStateContainerName = "tfstate"
 az role assignment create `
     --assignee-object-id $SpObjectId `
     --role "Storage Blob Data Contributor" `
-    --scope "$Scope/providers/Microsoft.Storage/storageAccounts/$StorageAccountName/blobServices/default/containers/$TerraformStateContainerName" | Out-Null
+    --scope "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.Storage/storageAccounts/$StorageAccountName/blobServices/default/containers/$TerraformStateContainerName" | Out-Null
 
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to assign a role 'Storage Blob Data Contributor' for SP"
