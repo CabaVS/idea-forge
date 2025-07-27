@@ -21,6 +21,13 @@ resource "azurerm_container_app" "aca_azuredevopsmateapi" {
       label           = "primary"
       latest_revision = true
     }
+
+    ip_security_restriction {
+      name             = "block-all-ips"
+      description      = "Block all public IPs from accessing the container app"
+      ip_address_range = "0.0.0.0/0"
+      action           = "Deny"
+    }
   }
 
   lifecycle {
