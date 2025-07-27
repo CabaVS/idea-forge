@@ -76,11 +76,11 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($StorageAccountKey)) {
     throw "Failed to obtain storage account key for '$StorageAccountName'"
 }
 
-$ContainerName = "tfstate"
+$ContainerNameForTfState = "tfstate"
 
-Write-Host "-> Creating blob container: $ContainerName"
+Write-Host "-> Creating blob container: $ContainerNameForTfState"
 az storage container create `
-    --name $ContainerName `
+    --name $ContainerNameForTfState `
     --account-name $StorageAccountName `
     --account-key $StorageAccountKey `
     --public-access off `
@@ -88,5 +88,20 @@ az storage container create `
     --output none
 
 if ($LASTEXITCODE -ne 0) {
-    throw "Failed to create blob container '$ContainerName'"
+    throw "Failed to create blob container '$ContainerNameForTfState'"
+}
+
+$ContainerNameForAppConfigs = "app-configs"
+
+Write-Host "-> Creating blob container: $ContainerNameForAppConfigs"
+az storage container create `
+    --name $ContainerNameForAppConfigs `
+    --account-name $StorageAccountName `
+    --account-key $StorageAccountKey `
+    --public-access off `
+    --only-show-errors `
+    --output none
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to create blob container '$ContainerNameForAppConfigs'"
 }

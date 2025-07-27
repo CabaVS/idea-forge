@@ -12,6 +12,11 @@
   <Folder Name="/Infrastructure/Terraform/">
     <File Path="infrastructure\terraform\main.tf" />
   </Folder>
+  <Folder Name="/Infrastructure/Terraform/Projects/" />
+  <Folder Name="/Infrastructure/Terraform/Projects/Azure DevOps Mate/">
+    <File Path="infrastructure\terraform\proj-azuredevopsmate\main.tf" />
+    <File Path="infrastructure\terraform\proj-azuredevopsmate\variables.tf" />
+  </Folder>
   <Folder Name="/Infrastructure/Terraform/Shared/">
     <File Path="infrastructure\terraform\shared\main.tf" />
     <File Path="infrastructure\terraform\shared\outputs.tf" />
