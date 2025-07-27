@@ -2,7 +2,9 @@
   <Folder Name="/Aspire/">
     <Project Path="aspire\CabaVS.IdeaForge.AppHost\CabaVS.IdeaForge.AppHost.csproj" Type="Classic C#" />
   </Folder>
-  <Folder Name="/Infrastructure/" />
+  <Folder Name="/Infrastructure/">
+    <File Path="infrastructure\README.md" />
+  </Folder>
   <Folder Name="/Infrastructure/Scripts/">
     <File Path="infrastructure\scripts\pre-deployment.ps1" />
     <File Path="infrastructure\scripts\pre-deployment-entraid.ps1" />
@@ -28,6 +30,7 @@
   </Folder>
   <Folder Name="/Shared/">
     <Project Path="shared\CabaVS.Shared.Infrastructure\CabaVS.Shared.Infrastructure.csproj" Type="Classic C#" />
+    <File Path="shared\README.md" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
@@ -39,5 +42,6 @@
     <File Path=".dockerignore" />
     <File Path=".github\workflows\proj-azuredevopsmate.yml" />
     <File Path=".github\workflows\infrastructure.yml" />
+    <File Path="README.md" />
   </Folder>
 </Solution>
