@@ -100,3 +100,36 @@ jobs:
         run: |
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }}
+
+  deploy-to-aca:
+    environment: production
+    name: Deploy to ACA
+    needs: [push-image]
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          registryUrl: ${{ secrets.ACR_NAME }}.azurecr.io
+          containerAppName: ${{ secrets.PROJ_AZDM_ACA_NAME }}
+          resourceGroup: ${{ secrets.RG_NAME }}
+          imageToDeploy: ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.push-image.outputs.sha_tag }}
+          environmentVariables: >
+            APPLICATIONINSIGHTS_CONNECTION_STRING=${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
+            ASPNETCORE_ENVIRONMENT=${{ secrets.ASPNETCORE_ENVIRONMENT }}
+            AZURE_CLIENT_ID=${{ secrets.PROJ_AZDM_UAMI_CLIENT_ID }}
+            CVS_CONFIGURATION_FROM_AZURE_URL=${{ secrets.PROJ_AZDM_CONFIG_URL }}
