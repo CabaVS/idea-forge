@@ -189,6 +189,9 @@ dotnet_diagnostic.IDE0008.severity = suggestion
 # IDE0046: 'if' statement can be simplified
 dotnet_diagnostic.IDE0046.severity = suggestion
 
+# CA1056: URI properties should not be strings
+dotnet_diagnostic.CA1056.severity = suggestion
+
 # CA1515: Consider making public types internal
 dotnet_diagnostic.CA1515.severity = suggestion
 
@@ -197,6 +200,9 @@ dotnet_diagnostic.CA1716.severity = suggestion
 
 # CA1812: Avoid uninstantiated internal classes
 dotnet_diagnostic.CA1812.severity = suggestion
+
+# CA1819: Properties should not return arrays
+dotnet_diagnostic.CA1819.severity = suggestion
 
 # CA1848: Use the LoggerMessage delegates
 dotnet_diagnostic.CA1848.severity = none

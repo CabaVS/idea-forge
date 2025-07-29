@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace CabaVS.AzureDevOpsMate.Functions;
 
-internal sealed class TimeTriggeredFunctions(
+public sealed class TimeTriggeredFunctions(
     ILoggerFactory loggerFactory,
     IHttpClientFactory httpClientFactory,
     IOptions<WorkItemsTrackingOptions> options,
@@ -19,6 +19,8 @@ internal sealed class TimeTriggeredFunctions(
     [Function("midnight-get-remaining-work")]
     public async Task Run([TimerTrigger("0 0 0 * * 2-6")] TimerInfo myTimer)
     {
+        ArgumentNullException.ThrowIfNull(myTimer);
+        
         var utcNow = DateOnly.FromDateTime(DateTime.UtcNow);
         _logger.LogInformation("Executing midnight-get-remaining-work function on {UtcNow}. Is Past Due? - {IsPastDue}.", utcNow, myTimer.IsPastDue);
         

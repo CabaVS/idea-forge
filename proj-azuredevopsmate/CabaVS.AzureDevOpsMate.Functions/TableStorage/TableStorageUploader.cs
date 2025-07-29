@@ -3,7 +3,7 @@ using Azure.Data.Tables;
 
 namespace CabaVS.AzureDevOpsMate.Functions.TableStorage;
 
-internal sealed class TableStorageUploader(TableClient tableClient)
+public sealed class TableStorageUploader(TableClient tableClient)
 {
     public async Task<(string PartitionKey, string RowKey)> UploadAsync(int workItemId, string report, CancellationToken cancellationToken = default)
     {
