@@ -97,14 +97,7 @@ resource "azurerm_linux_function_app" "func_azuredevopsmate" {
   functions_extension_version = "~4"
   https_only                  = true
 
-  site_config {
-    application_insights_connection_string = var.application_insights_connection_string
-
-    application_stack {
-      dotnet_version              = "9.0"
-      use_dotnet_isolated_runtime = true
-    }
-  }
+  site_config {}
 
   identity {
     type         = "UserAssigned"
@@ -113,7 +106,8 @@ resource "azurerm_linux_function_app" "func_azuredevopsmate" {
 
   lifecycle {
     ignore_changes = [
-      app_settings
+      app_settings,
+      site_config
     ]
   }
 
