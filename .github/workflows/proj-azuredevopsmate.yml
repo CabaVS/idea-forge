@@ -202,3 +202,15 @@ jobs:
         with:
           app-name: ${{ secrets.PROJ_AZDM_FUNCTIONAPP_NAME }}
           package: './publish'
+          
+      - name: Set Function App environment variables
+        run: |
+          az functionapp config appsettings set \
+            --name ${{ secrets.PROJ_AZDM_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ secrets.RG_NAME }} \
+            --settings \
+              APPLICATIONINSIGHTS_CONNECTION_STRING='${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}' \
+              ASPNETCORE_ENVIRONMENT='${{ secrets.ASPNETCORE_ENVIRONMENT }}' \
+              AZURE_CLIENT_ID='${{ secrets.PROJ_AZDM_UAMI_CLIENT_ID }}' \
+              CVS_CONFIGURATION_FROM_AZURE_URL='${{ secrets.PROJ_AZDM_CONFIG_URL }}' \
+              FUNCTIONS_WORKER_RUNTIME='dotnet-isolated'

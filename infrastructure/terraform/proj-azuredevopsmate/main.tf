@@ -104,6 +104,13 @@ resource "azurerm_linux_function_app" "func_azuredevopsmate" {
     identity_ids = [azurerm_user_assigned_identity.uami_azuredevopsmate.id]
   }
 
+  lifecycle {
+    ignore_changes = [
+      app_settings,
+      site_config
+    ]
+  }
+
   app_settings = {
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.application_insights_connection_string
     "FUNCTIONS_WORKER_RUNTIME"              = "dotnet-isolated"
