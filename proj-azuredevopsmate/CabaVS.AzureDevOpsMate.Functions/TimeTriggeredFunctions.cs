@@ -7,14 +7,25 @@ using Microsoft.Extensions.Options;
 
 namespace CabaVS.AzureDevOpsMate.Functions;
 
-public sealed class TimeTriggeredFunctions(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory,
-    IOptions<WorkItemsTrackingOptions> options,
-    TableStorageUploader tableStorageUploader)
+public sealed class TimeTriggeredFunctions
 {
-    private readonly ILogger _logger = loggerFactory.CreateLogger<TimeTriggeredFunctions>();
-    private readonly WorkItemsTrackingOptions _options = options.Value;
+    private readonly ILogger _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly WorkItemsTrackingOptions _options;
+    private readonly TableStorageUploader _tableStorageUploader;
+
+    public TimeTriggeredFunctions(
+        ILoggerFactory loggerFactory,
+        IHttpClientFactory httpClientFactory,
+        IOptions<WorkItemsTrackingOptions> options,
+        TableStorageUploader tableStorageUploader)
+    {
+        _logger = loggerFactory.CreateLogger<TimeTriggeredFunctions>();
+        _httpClientFactory = httpClientFactory;
+        _options = options.Value;
+        _tableStorageUploader = tableStorageUploader;
+    }
+
 
     [Function("midnight-get-remaining-work")]
     public async Task Run([TimerTrigger("0 0 0 * * 2-6")] TimerInfo myTimer)
@@ -40,7 +51,7 @@ public sealed class TimeTriggeredFunctions(
             return;
         }
         
-        using HttpClient httpClient = httpClientFactory.CreateClient();
+        using HttpClient httpClient = _httpClientFactory.CreateClient();
         
         foreach (var workItemId in toTrackItems.Select(x => x.WorkItemId))
         {
@@ -52,7 +63,7 @@ public sealed class TimeTriggeredFunctions(
             response.EnsureSuccessStatusCode();
             _logger.LogInformation("Received a successful response from API.");
             
-            var (partitionKey, rowKey) = await tableStorageUploader.UploadAsync(
+            var (partitionKey, rowKey) = await _tableStorageUploader.UploadAsync(
                 workItemId,
                 await response.Content.ReadAsStringAsync());
             _logger.LogInformation("Response uploaded to table storage with Row Key = {RowKey} and Partition Key = {PartitionKey}.", rowKey, partitionKey);
