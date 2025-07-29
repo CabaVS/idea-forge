@@ -54,15 +54,6 @@ jobs:
           name: app-publish
           path: ./publish
           
-      - name: Publish Function App
-        run: dotnet publish ${{ env.PATH_TO_FUNCTIONS_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} -o ./functions-publish
-
-      - name: Upload Function App artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: functions-publish
-          path: ./functions-publish
-          
   build-functions:
     name: Build functions
     runs-on: ubuntu-latest
