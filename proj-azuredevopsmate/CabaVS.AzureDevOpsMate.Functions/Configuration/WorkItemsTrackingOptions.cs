@@ -2,7 +2,9 @@
 
 internal sealed class WorkItemsTrackingOptions
 {
-    public string UrlTemplate { get; set; } = string.Empty;
+    public string UrlTemplateForRemainingWork { get; set; } = string.Empty;
+    public string TableAccountUrl { get; set; } = string.Empty;
+    public string TableName { get; set; } = string.Empty;
     public ToTrackItem[] ToTrackItems { get; set; } = [];
 }
 

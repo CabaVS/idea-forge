@@ -15,6 +15,7 @@ IResourceBuilder<AzureStorageResource> azurite = builder.AddAzureStorage("stcaba
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent));
 IResourceBuilder<AzureBlobStorageResource> blobsResource = azurite.AddBlobs("blobs");
+IResourceBuilder<AzureTableStorageResource> tablesResource = azurite.AddTables("tables");
 
 // Azure DevOps Mate
 builder.AddProject<Projects.CabaVS_AzureDevOpsMate>("aca-azuredevopsmateapi")
@@ -25,6 +26,7 @@ builder.AddAzureFunctionsProject<Projects.CabaVS_AzureDevOpsMate_Functions>("fun
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development") // Not loaded from launchSettings.json
     .WithEnvironment("CVS_CONFIGURATION_FROM_AZURE_URL", configUrlForAzureDevOpsMate)
     .WithHostStorage(azurite)
-    .WithReference(blobsResource).WaitFor(blobsResource);
+    .WithReference(blobsResource).WaitFor(blobsResource)
+    .WithReference(tablesResource).WaitFor(tablesResource);
 
 await builder.Build().RunAsync();
