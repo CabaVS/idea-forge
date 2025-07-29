@@ -13,3 +13,7 @@ output "acr_login_server" {
 output "ace_id" {
   value = azurerm_container_app_environment.ace.id
 }
+
+output "asp_id" {
+  value = azurerm_service_plan.asp.id
+}

@@ -56,4 +56,8 @@ module "project_azuredevopsmate" {
   container_app_environment_id           = module.shared.ace_id
   blob_container_scope                   = "${data.azurerm_storage_account.existing.id}/blobServices/default/containers/${var.container_name_for_app_configs}"
   application_insights_connection_string = module.shared.application_insights_connection_string
+  asp_id                                 = module.shared.asp_id
+  st_id                                  = data.azurerm_storage_account.existing.id
+  st_name                                = data.azurerm_storage_account.existing.name
+  st_primary_key                         = data.azurerm_storage_account.existing.primary_access_key
 }

@@ -32,3 +32,23 @@ variable "blob_container_scope" {
   type        = string
   description = "Scope path for the blob container (used for RBAC)"
 }
+
+variable "asp_id" {
+  type        = string
+  description = "Resource ID of the ASP for Function Apps"
+}
+
+variable "st_id" {
+  type        = string
+  description = "ID of the Storage Account"
+}
+
+variable "st_name" {
+  type        = string
+  description = "Name of the Storage Account"
+}
+
+variable "st_primary_key" {
+  type        = string
+  description = "Primary key of the Storage Account"
+}

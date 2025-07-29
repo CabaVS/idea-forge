@@ -34,3 +34,12 @@ resource "azurerm_container_app_environment" "ace" {
   resource_group_name        = var.resource_group_name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
 }
+
+# App Service Plan
+resource "azurerm_service_plan" "asp" {
+  name                = "asp-cabavsideaforge"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  os_type             = "Linux"
+  sku_name            = "Y1"
+}
