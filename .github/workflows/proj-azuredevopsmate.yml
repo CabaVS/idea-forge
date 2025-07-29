@@ -23,11 +23,12 @@ env:
   DOCKER_IMAGE_NAME: "proj-azuredevopsmate"
   DOCKERFILE_PATH: "./proj.azuredevopsmate.Dockerfile"
   PATH_TO_CSPROJ: "./proj-azuredevopsmate/CabaVS.AzureDevOpsMate/CabaVS.AzureDevOpsMate.csproj"
+  PATH_TO_FUNCTIONS_CSPROJ: "./proj-azuredevopsmate/CabaVS.AzureDevOpsMate.Functions/CabaVS.AzureDevOpsMate.Functions.csproj"
   PATH_TO_GLOBAL_JSON: "./global.json"
 
 jobs:
-  build:
-    name: Build project
+  build-app:
+    name: Build application
     runs-on: ubuntu-latest
     
     steps:
@@ -52,11 +53,47 @@ jobs:
         with:
           name: app-publish
           path: ./publish
+          
+      - name: Publish Function App
+        run: dotnet publish ${{ env.PATH_TO_FUNCTIONS_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} -o ./functions-publish
+
+      - name: Upload Function App artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: functions-publish
+          path: ./functions-publish
+          
+  build-functions:
+    name: Build functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ${{ env.PATH_TO_GLOBAL_JSON }}
+
+      - name: Restore
+        run: dotnet restore ${{ env.PATH_TO_FUNCTIONS_CSPROJ }}
+
+      - name: Build
+        run: dotnet build ${{ env.PATH_TO_FUNCTIONS_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ env.PATH_TO_FUNCTIONS_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build -o ./publish
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: functions-publish
+          path: ./publish
   
   push-image:
     environment: production
     name: Push image to ACR
-    needs: [build]
+    needs: [build-app]
     runs-on: ubuntu-latest
     
     outputs:
@@ -133,3 +170,35 @@ jobs:
             ASPNETCORE_ENVIRONMENT=${{ secrets.ASPNETCORE_ENVIRONMENT }}
             AZURE_CLIENT_ID=${{ secrets.PROJ_AZDM_UAMI_CLIENT_ID }}
             CVS_CONFIGURATION_FROM_AZURE_URL=${{ secrets.PROJ_AZDM_CONFIG_URL }}
+            
+  deploy-to-functions:
+    environment: production
+    name: Deploy Azure Function
+    needs: [build-functions]
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: functions-publish
+          path: ./publish
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ secrets.PROJ_AZDM_FUNCTIONAPP_NAME }}
+          package: './publish'
