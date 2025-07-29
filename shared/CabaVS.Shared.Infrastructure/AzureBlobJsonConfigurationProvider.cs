@@ -11,6 +11,8 @@ public static class AzureBlobJsonConfigurationProvider
 {
     public static IConfigurationBuilder AddJsonStreamFromBlob(this IConfigurationBuilder builder, bool isDevelopment, string envName = "CVS_CONFIGURATION_FROM_AZURE_URL")
     {
+        ArgumentNullException.ThrowIfNull(builder);
+        
         var configUrl = Environment.GetEnvironmentVariable(envName);
         if (string.IsNullOrWhiteSpace(configUrl))
         {
@@ -20,9 +22,13 @@ public static class AzureBlobJsonConfigurationProvider
         BlobClient blobClient;
         if (isDevelopment)
         {
-            var connectionString = ((IConfiguration)builder).GetConnectionString("blobs");
+            var configuration = (IConfiguration)builder;
             
-            var (accountName, accountKey) = ParseAccountCredentials(connectionString ?? string.Empty);
+            var connectionString = configuration.GetConnectionString("blobs") ??
+                                   configuration["blobs"] ??
+                                   throw new InvalidOperationException("Connection string 'blobs' is not configured.");
+            
+            var (accountName, accountKey) = ParseAccountCredentials(connectionString);
 
             blobClient = new BlobClient(new Uri(configUrl), new StorageSharedKeyCredential(accountName, accountKey));
         }

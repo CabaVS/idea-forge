@@ -21,4 +21,10 @@ builder.AddProject<Projects.CabaVS_AzureDevOpsMate>("aca-azuredevopsmateapi")
     .WithEnvironment("CVS_CONFIGURATION_FROM_AZURE_URL", configUrlForAzureDevOpsMate)
     .WithReference(blobsResource).WaitFor(blobsResource);
 
+builder.AddAzureFunctionsProject<Projects.CabaVS_AzureDevOpsMate_Functions>("func-azuredevopsmateapi")
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development") // Not loaded from launchSettings.json
+    .WithEnvironment("CVS_CONFIGURATION_FROM_AZURE_URL", configUrlForAzureDevOpsMate)
+    .WithHostStorage(azurite)
+    .WithReference(blobsResource).WaitFor(blobsResource);
+
 await builder.Build().RunAsync();

@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/Aspire/">
-    <Project Path="aspire\CabaVS.IdeaForge.AppHost\CabaVS.IdeaForge.AppHost.csproj" Type="Classic C#" />
+    <Project Path="aspire\CabaVS.IdeaForge.AppHost\CabaVS.IdeaForge.AppHost.csproj" />
   </Folder>
   <Folder Name="/Infrastructure/" />
   <Folder Name="/Infrastructure/Scripts/">
@@ -24,10 +24,11 @@
   </Folder>
   <Folder Name="/Projects/" />
   <Folder Name="/Projects/Azure DevOps Mate/">
-    <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" Type="Classic C#" />
+    <Project Path="proj-azuredevopsmate/CabaVS.AzureDevOpsMate.Functions/CabaVS.AzureDevOpsMate.Functions.csproj" />
+    <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" />
   </Folder>
   <Folder Name="/Shared/">
-    <Project Path="shared\CabaVS.Shared.Infrastructure\CabaVS.Shared.Infrastructure.csproj" Type="Classic C#" />
+    <Project Path="shared\CabaVS.Shared.Infrastructure\CabaVS.Shared.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />

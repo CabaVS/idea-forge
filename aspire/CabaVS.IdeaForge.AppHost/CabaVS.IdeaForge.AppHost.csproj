@@ -9,10 +9,12 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire.Hosting.AppHost" />
+        <PackageReference Include="Aspire.Hosting.Azure.Functions" />
         <PackageReference Include="Aspire.Hosting.Azure.Storage" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\proj-azuredevopsmate\CabaVS.AzureDevOpsMate.Functions\CabaVS.AzureDevOpsMate.Functions.csproj" />
       <ProjectReference Include="..\..\proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" />
     </ItemGroup>
 

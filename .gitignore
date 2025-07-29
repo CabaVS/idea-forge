@@ -1,3 +1,6 @@
+# Azure Functions
+local.settings.json
+
 # Build and publish output folders
 bin/
 obj/
@@ -6,6 +9,9 @@ publish/
 # IDE: Rider
 .idea/
 *.DotSettings.user
+
+# IDE: Visual Studio
+.vs/
 
 # Terraform
 .terraform/

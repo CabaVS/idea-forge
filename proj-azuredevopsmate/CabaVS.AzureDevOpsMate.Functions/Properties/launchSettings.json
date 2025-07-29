@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "CabaVS.AzureDevOpsMate.Functions": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 5026",
+      "launchBrowser": false
+    }
+  }
+}
