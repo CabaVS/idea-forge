@@ -17,8 +17,7 @@ internal sealed class TimeTriggeredFunctions(
     private readonly WorkItemsTrackingOptions _options = options.Value;
 
     [Function("midnight-get-remaining-work")]
-    // public void Run([TimerTrigger("0 0 0 * * 2-6")] TimerInfo myTimer)
-    public async Task Run([TimerTrigger("0/15 * * * * *")] TimerInfo myTimer)
+    public async Task Run([TimerTrigger("0 0 0 * * 2-6")] TimerInfo myTimer)
     {
         var utcNow = DateOnly.FromDateTime(DateTime.UtcNow);
         _logger.LogInformation("Executing midnight-get-remaining-work function on {UtcNow}. Is Past Due? - {IsPastDue}.", utcNow, myTimer.IsPastDue);
