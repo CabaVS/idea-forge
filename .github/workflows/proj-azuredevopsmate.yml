@@ -199,7 +199,7 @@ jobs:
           az storage blob upload \
             --account-name ${{ secrets.STORAGE_ACCOUNT_NAME }} \
             --container-name ${{ secrets.STORAGE_CONTAINER_NAME_FOR_FUNCTION_APPS }} \
-            --name functionapp.zip \
+            --name azuredevopsmate.zip \
             --file ./functionapp.zip \
             --auth-mode login \
             --overwrite true
