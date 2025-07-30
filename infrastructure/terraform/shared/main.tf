@@ -34,3 +34,26 @@ resource "azurerm_container_app_environment" "ace" {
   resource_group_name        = var.resource_group_name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
 }
+
+# App Service Plan for Flex Consumption
+resource "azurerm_service_plan" "flex_plan" {
+  name                = "asp-cabavsideaforge-flex"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  os_type             = "Linux"
+  sku_name            = "FC1"
+}
+
+# Storage Account for Function Apps
+resource "azurerm_storage_account" "function_backplane" {
+  name                = "stcabavsideaforgefunc"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  account_tier               = "Standard"
+  account_replication_type   = "LRS"
+  account_kind               = "StorageV2"
+  https_traffic_only_enabled = true
+
+  min_tls_version = "TLS1_2"
+}

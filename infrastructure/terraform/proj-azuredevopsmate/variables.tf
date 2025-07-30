@@ -37,3 +37,23 @@ variable "container_name_for_app_configs" {
   type        = string
   description = "Container name for App Configurations"
 }
+
+variable "asp_flex_id" {
+  type        = string
+  description = "ID of the App Service Plan for Flex Consumption"
+}
+
+variable "functions_backplane_id" {
+  type        = string
+  description = "ID of the Storage Account for functions backplane"
+}
+
+variable "functions_backplane_name" {
+  type        = string
+  description = "Name of the Storage Account for functions backplane"
+}
+
+variable "functions_backplane_primary_connection_string" {
+  type        = string
+  description = "Primary Connection String of the Storage Account for functions backplane"
+}
