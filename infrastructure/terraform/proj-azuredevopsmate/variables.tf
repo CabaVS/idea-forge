@@ -27,28 +27,3 @@ variable "application_insights_connection_string" {
   type        = string
   description = "Connection string for the shared Application Insights instance"
 }
-
-variable "blob_container_app_configs" {
-  type        = string
-  description = "Container name with Application Configurations"
-}
-
-variable "blob_container_function_apps" {
-  type        = string
-  description = "Container name with Function Apps files"
-}
-
-variable "asp_id" {
-  type        = string
-  description = "Resource ID of the ASP for Function Apps"
-}
-
-variable "st_id" {
-  type        = string
-  description = "ID of the Storage Account"
-}
-
-variable "st_name" {
-  type        = string
-  description = "Name of the Storage Account"
-}

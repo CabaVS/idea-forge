@@ -12,6 +12,8 @@ publish/
 
 # IDE: Visual Studio
 .vs/
+PublishProfiles/
+*.csproj.user
 
 # Terraform
 .terraform/

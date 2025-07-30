@@ -21,16 +21,6 @@ variable "resource_group_name" {}
 variable "storage_account_name" {}
 variable "subscription_id" {}
 
-variable "container_name_for_app_configs" {
-  type    = string
-  default = "app-configs"
-}
-
-variable "container_name_for_function_apps" {
-  type    = string
-  default = "function-releases"
-}
-
 # Existing Resource Group
 data "azurerm_resource_group" "existing" {
   name = var.resource_group_name
@@ -59,10 +49,5 @@ module "project_azuredevopsmate" {
   acr_id                                 = module.shared.acr_id
   acr_login_server                       = module.shared.acr_login_server
   container_app_environment_id           = module.shared.ace_id
-  blob_container_app_configs             = var.container_name_for_app_configs
-  blob_container_function_apps           = var.container_name_for_function_apps
   application_insights_connection_string = module.shared.application_insights_connection_string
-  asp_id                                 = module.shared.asp_id
-  st_id                                  = data.azurerm_storage_account.existing.id
-  st_name                                = data.azurerm_storage_account.existing.name
 }

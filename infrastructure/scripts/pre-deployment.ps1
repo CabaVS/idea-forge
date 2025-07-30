@@ -78,9 +78,9 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($StorageAccountKey)) {
 
 $ContainerNameForTfState = "tfstate"
 
-Write-Host "-> Creating blob container: $ContainerNameForTfState"
+Write-Host "-> Creating blob container for TF state"
 az storage container create `
-    --name $ContainerNameForTfState `
+    --name "tfstate" `
     --account-name $StorageAccountName `
     --account-key $StorageAccountKey `
     --public-access off `
@@ -88,35 +88,5 @@ az storage container create `
     --output none
 
 if ($LASTEXITCODE -ne 0) {
-    throw "Failed to create blob container '$ContainerNameForTfState'"
-}
-
-$ContainerNameForAppConfigs = "app-configs"
-
-Write-Host "-> Creating blob container: $ContainerNameForAppConfigs"
-az storage container create `
-    --name $ContainerNameForAppConfigs `
-    --account-name $StorageAccountName `
-    --account-key $StorageAccountKey `
-    --public-access off `
-    --only-show-errors `
-    --output none
-
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to create blob container '$ContainerNameForAppConfigs'"
-}
-
-$ContainerNameForFunctionReleases = "function-releases"
-
-Write-Host "-> Creating blob container: $ContainerNameForFunctionReleases"
-az storage container create `
-    --name $ContainerNameForFunctionReleases `
-    --account-name $StorageAccountName `
-    --account-key $StorageAccountKey `
-    --public-access off `
-    --only-show-errors `
-    --output none
-
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to create blob container '$ContainerNameForFunctionReleases'"
+    throw "Failed to create blob container for TF state"
 }
