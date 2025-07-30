@@ -74,8 +74,14 @@ resource "azurerm_role_assignment" "acr_pull_for_azuredevopsmate" {
   principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmate.principal_id
 }
 
-resource "azurerm_role_assignment" "sa_blob_reader_for_azuredevopsmate" {
-  scope                = var.blob_container_scope
+resource "azurerm_role_assignment" "sa_blob_reader_for_azuredevopsmate_appconfigs" {
+  scope                = "${var.st_id}/blobServices/default/containers/${var.blob_container_app_configs}"
+  role_definition_name = "Storage Blob Data Reader"
+  principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmate.principal_id
+}
+
+resource "azurerm_role_assignment" "sa_blob_reader_for_azuredevopsmate_functionapps" {
+  scope                = "${var.st_id}/blobServices/default/containers/${var.blob_container_function_apps}"
   role_definition_name = "Storage Blob Data Reader"
   principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmate.principal_id
 }
@@ -87,17 +93,24 @@ resource "azurerm_role_assignment" "sa_table_contributor_for_azuredevopsmate" {
 }
 
 # Function apps
-resource "azurerm_linux_function_app" "func_azuredevopsmate" {
-  name                        = "func-azuredevopsmate"
-  location                    = var.location
-  resource_group_name         = var.resource_group_name
-  service_plan_id             = var.asp_id
-  storage_account_name        = var.st_name
-  storage_account_access_key  = var.st_primary_key
-  functions_extension_version = "~4"
-  https_only                  = true
+resource "azurerm_function_app_flex_consumption" "func_azuredevopsmate" {
+  name                = "func-azuredevopsmate"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  service_plan_id     = var.asp_id
 
-  site_config {}
+  storage_container_type            = "blobContainer"
+  storage_container_endpoint        = "https://${var.st_name}.blob.core.windows.net/${var.blob_container_function_apps}/azuredevopsmate.zip"
+  storage_authentication_type       = "UserAssignedIdentity"
+  storage_user_assigned_identity_id = azurerm_user_assigned_identity.uami_azuredevopsmate.id
+
+  https_only = true
+
+  runtime_name    = "dotnet-isolated"
+  runtime_version = "9.0"
+
+  instance_memory_in_mb  = 512
+  maximum_instance_count = 40
 
   identity {
     type         = "UserAssigned"
@@ -111,8 +124,9 @@ resource "azurerm_linux_function_app" "func_azuredevopsmate" {
     ]
   }
 
+  site_config {}
+
   app_settings = {
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.application_insights_connection_string
-    "FUNCTIONS_WORKER_RUNTIME"              = "dotnet-isolated"
   }
 }

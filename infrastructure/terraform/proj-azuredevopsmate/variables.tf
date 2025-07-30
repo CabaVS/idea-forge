@@ -28,9 +28,14 @@ variable "application_insights_connection_string" {
   description = "Connection string for the shared Application Insights instance"
 }
 
-variable "blob_container_scope" {
+variable "blob_container_app_configs" {
   type        = string
-  description = "Scope path for the blob container (used for RBAC)"
+  description = "Container name with Application Configurations"
+}
+
+variable "blob_container_function_apps" {
+  type        = string
+  description = "Container name with Function Apps files"
 }
 
 variable "asp_id" {
@@ -46,9 +51,4 @@ variable "st_id" {
 variable "st_name" {
   type        = string
   description = "Name of the Storage Account"
-}
-
-variable "st_primary_key" {
-  type        = string
-  description = "Primary key of the Storage Account"
 }

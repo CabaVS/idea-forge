@@ -180,12 +180,6 @@ jobs:
         with:
           name: functions-publish
           path: ./publish
-          
-      - name: Zip the published output
-        run: |
-          cd ./publish
-          zip -r ../functionapp.zip .
-          cd ..
 
       - name: Azure Login with OIDC
         uses: azure/login@v2
@@ -193,13 +187,22 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Deploy via Zip Deploy
+          
+      - name: Zip the published output
         run: |
-          az functionapp deployment source config-zip \
-            --name ${{ secrets.PROJ_AZDM_FUNCTIONAPP_NAME }} \
-            --resource-group ${{ secrets.RG_NAME }} \
-            --src functionapp.zip
+          cd ./publish
+          zip -r ../functionapp.zip .
+          cd ..
+
+      - name: Upload function ZIP to blob
+        run: |
+          az storage blob upload \
+            --account-name ${{ secrets.STORAGE_ACCOUNT_NAME }} \
+            --container-name ${{ secrets.STORAGE_CONTAINER_NAME_FOR_FUNCTION_APPS }} \
+            --name functionapp.zip \
+            --file ./functionapp.zip \
+            --auth-mode login \
+            --overwrite true
           
       - name: Set Function App environment variables
         run: |

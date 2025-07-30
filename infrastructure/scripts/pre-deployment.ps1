@@ -105,3 +105,18 @@ az storage container create `
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to create blob container '$ContainerNameForAppConfigs'"
 }
+
+$ContainerNameForFunctionReleases = "function-releases"
+
+Write-Host "-> Creating blob container: $ContainerNameForFunctionReleases"
+az storage container create `
+    --name $ContainerNameForFunctionReleases `
+    --account-name $StorageAccountName `
+    --account-key $StorageAccountKey `
+    --public-access off `
+    --only-show-errors `
+    --output none
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to create blob container '$ContainerNameForFunctionReleases'"
+}
