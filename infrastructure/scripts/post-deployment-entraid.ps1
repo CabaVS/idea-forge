@@ -57,3 +57,17 @@ az role assignment create `
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to assign the role 'AcrPush' to the SP"
 }
+
+Write-Host "-> Assigning role 'Storage Blob Data Contributor' to SP: $SpObjectId"
+
+$StorageAccountName = az storage account list --resource-group $ResourceGroupName --query "[0].name" --output tsv
+$FunctionsReleasesContainerName = 'function-releases'
+
+az role assignment create `
+    --assignee-object-id $SpObjectId `
+    --role "Storage Blob Data Contributor" `
+    --scope "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.Storage/storageAccounts/$StorageAccountName/blobServices/default/containers/$FunctionsReleasesContainerName" | Out-Null
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to assign the role 'Storage Blob Data Contributor' to the SP"
+}
