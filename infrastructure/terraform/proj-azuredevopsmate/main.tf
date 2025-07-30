@@ -7,7 +7,7 @@ resource "azurerm_container_app" "aca_azuredevopsmateapi" {
 
   identity {
     type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.uami_azuredevopsmate.id]
+    identity_ids = [azurerm_user_assigned_identity.uami_azuredevopsmateapi.id]
   }
 
   ingress {
@@ -22,6 +22,7 @@ resource "azurerm_container_app" "aca_azuredevopsmateapi" {
       latest_revision = true
     }
 
+    # TODO: Replace with a proper VNET or other sort of protection
     ip_security_restriction {
       name             = "block-all-ips"
       description      = "Block all public IPs from accessing the container app"
@@ -39,7 +40,7 @@ resource "azurerm_container_app" "aca_azuredevopsmateapi" {
 
   registry {
     server   = var.acr_login_server
-    identity = azurerm_user_assigned_identity.uami_azuredevopsmate.id
+    identity = azurerm_user_assigned_identity.uami_azuredevopsmateapi.id
   }
 
   template {
@@ -61,15 +62,21 @@ resource "azurerm_container_app" "aca_azuredevopsmateapi" {
 }
 
 # User-Assigned Managed Identity
-resource "azurerm_user_assigned_identity" "uami_azuredevopsmate" {
-  name                = "uami-azuredevopsmate"
+resource "azurerm_user_assigned_identity" "uami_azuredevopsmateapi" {
+  name                = "uami-azuredevopsmateapi"
   location            = var.location
   resource_group_name = var.resource_group_name
 }
 
 # Role assignments
-resource "azurerm_role_assignment" "acr_pull_for_azuredevopsmate" {
+resource "azurerm_role_assignment" "acr_pull_for_azuredevopsmateapi" {
   scope                = var.acr_id
   role_definition_name = "AcrPull"
-  principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmate.principal_id
+  principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmateapi.principal_id
+}
+
+resource "azurerm_role_assignment" "sa_blob_reader_for_azuredevopsmateapi" {
+  scope                = "${var.storage_account_id}/blobServices/default/containers/${var.container_name_for_app_configs}"
+  role_definition_name = "Storage Blob Data Reader"
+  principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmateapi.principal_id
 }

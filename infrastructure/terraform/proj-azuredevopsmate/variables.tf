@@ -27,3 +27,13 @@ variable "application_insights_connection_string" {
   type        = string
   description = "Connection string for the shared Application Insights instance"
 }
+
+variable "storage_account_id" {
+  type        = string
+  description = "ID of the Storage Account"
+}
+
+variable "container_name_for_app_configs" {
+  type        = string
+  description = "Container name for App Configurations"
+}
