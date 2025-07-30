@@ -44,10 +44,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "-> Assigning role 'AcrPush': $AppClientId"
-$AcrName = "acrcabavsideaforge"
-if (-not [string]::IsNullOrWhiteSpace($Environment)) {
-    $AcrName = "$AcrName$Environment"
-}
+$AcrName = az acr list --resource-group $ResourceGroupName --query "[0].name" --output tsv
 
 az role assignment create `
     --assignee $AppClientId `
