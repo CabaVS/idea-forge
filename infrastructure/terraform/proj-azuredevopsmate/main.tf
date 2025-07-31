@@ -105,9 +105,15 @@ resource "azurerm_role_assignment" "sa_queue_contributor_for_azuredevopsmate" {
   principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmate.principal_id
 }
 
-resource "azurerm_role_assignment" "sa_blob_reader_for_azuredevopsmate" {
+resource "azurerm_role_assignment" "sa_blob_reader_for_azuredevopsmate_for_application" {
   scope                = "${var.storage_account_id}/blobServices/default/containers/${var.container_name_for_app_configs}"
   role_definition_name = "Storage Blob Data Reader"
+  principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmate.principal_id
+}
+
+resource "azurerm_role_assignment" "sa_table_contributor_for_azuredevopsmate_for_application" {
+  scope                = var.storage_account_id
+  role_definition_name = "Storage Table Data Contributor"
   principal_id         = azurerm_user_assigned_identity.uami_azuredevopsmate.principal_id
 }
 
@@ -139,8 +145,7 @@ resource "azurerm_function_app_flex_consumption" "function_app" {
 
   lifecycle {
     ignore_changes = [
-      app_settings["APPLICATIONINSIGHTS_CONNECTION_STRING"],
-      app_settings["AzureWebJobsStorage"],
+      app_settings,
       site_config[0].application_insights_connection_string,
       storage_access_key
     ]
