@@ -78,14 +78,16 @@ jobs:
       - name: Confirm output
         run: |
           cd ./publish
-          ls -a
+          find . -print | sed -e 's;[^/]*/;|____;g;s;____|; |;g'
           cd ..
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: functions-publish
-          path: ./publish
+          path: |
+            ./publish
+            ./publish/.azurefunctions/**/*
   
   push-image:
     environment: production
