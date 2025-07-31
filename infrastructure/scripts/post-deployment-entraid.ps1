@@ -54,3 +54,15 @@ az role assignment create `
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to assign the role 'AcrPush'"
 }
+
+Write-Host "-> Assigning role 'Storage Blob Data Contributor': $AppClientId"
+$StorageAccountName = az storage account list --resource-group $ResourceGroupName --query "[?contains(name, 'func')].name | [0]" --output tsv
+
+az role assignment create `
+    --assignee $AppClientId `
+    --role "Storage Blob Data Contributor" `
+    --scope "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.Storage/storageAccounts/$StorageAccountName" | Out-Null
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to assign the role 'Storage Blob Data Contributor'"
+}
