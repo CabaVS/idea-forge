@@ -3,11 +3,12 @@
 internal sealed record RemainingWorkModel(
     double Bugs,
     double Functionality,
+    double Periodic,
     double Requirements,
     double Technical,
     double Other) : IComparable<RemainingWorkModel>
 {
-    private double Total => Bugs + Functionality + Requirements + Technical + Other;
+    public double Total => Bugs + Functionality + Periodic + Requirements + Technical + Other;
 
     public int CompareTo(RemainingWorkModel? other) =>
         other is null ? 1 : Total.CompareTo(other.Total);
@@ -16,6 +17,7 @@ internal sealed record RemainingWorkModel(
         new(
             Bugs: a.Bugs + b.Bugs,
             Functionality: a.Functionality + b.Functionality,
+            Periodic: a.Periodic + b.Periodic,
             Requirements: a.Requirements + b.Requirements,
             Technical: a.Technical + b.Technical,
             Other: a.Other + b.Other);
@@ -25,6 +27,6 @@ internal static class RemainingWorkModelExtensions
 {
     public static RemainingWorkModel Sum(this IEnumerable<RemainingWorkModel> source) =>
         source.Aggregate(
-            new RemainingWorkModel(0, 0, 0, 0, 0),
+            new RemainingWorkModel(0, 0, 0, 0, 0, 0),
             (current, model) => current + model);
 }

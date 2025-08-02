@@ -186,6 +186,7 @@ app.MapGet(
                     TotalRemainingWork = new RemainingWorkModel(
                         lookupByType[RemainingWorkType.Bugs].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Functionality].Sum(x => x.RemainingWork),
+                        lookupByType[RemainingWorkType.Periodic].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Requirements].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Technical].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Other].Sum(x => x.RemainingWork))
@@ -205,9 +206,9 @@ app.MapGet(
             .Select(g => new
             {
                 Team = g.Key,
-                TotalRemainingWork = g.Select(x => x.RemainingWork).Sum()
+                RemainingWork = g.Select(x => x.RemainingWork).Sum(),
             })
-            .OrderByDescending(x => x.TotalRemainingWork)
+            .OrderByDescending(x => x.RemainingWork)
             .ThenBy(x => x.Team);
         
         return Results.Ok(
