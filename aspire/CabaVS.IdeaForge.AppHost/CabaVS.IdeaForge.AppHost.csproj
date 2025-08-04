@@ -14,7 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\proj-azuredevopsmate\CabaVS.AzureDevOpsMate.Functions\CabaVS.AzureDevOpsMate.Functions.csproj" />
       <ProjectReference Include="..\..\proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" />
     </ItemGroup>
 

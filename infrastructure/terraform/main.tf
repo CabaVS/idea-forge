@@ -1,3 +1,4 @@
+# Configure Terraform and required providers
 terraform {
   required_version = "1.12.2"
 
@@ -8,59 +9,63 @@ terraform {
     }
   }
 
+  # Azure backend configuration for storing Terraform state
   backend "azurerm" {}
 }
 
+# Configure Azure provider with minimal features
 provider "azurerm" {
   features {}
-  subscription_id = var.subscription_id
+  subscription_id = var.azure_subscription_id
 }
 
-# Variables
-variable "resource_group_name" {}
-variable "storage_account_name" {}
-variable "subscription_id" {}
-
-# Existing Resource Group
-data "azurerm_resource_group" "existing" {
-  name = var.resource_group_name
+# Input Variables
+variable "azure_resource_group_name" {
+  description = "Name of the existing Azure Resource Group"
+  type        = string
 }
 
-# Existing Storage Account
-data "azurerm_storage_account" "existing" {
-  name                = var.storage_account_name
-  resource_group_name = var.resource_group_name
+variable "azure_storage_account_name" {
+  description = "Name of the existing Azure Storage Account"
+  type        = string
 }
 
-# Existing Storage Account Containers
-resource "azurerm_storage_container" "app_configs" {
-  name                  = "app-configs"
-  storage_account_id    = data.azurerm_storage_account.existing.id
-  container_access_type = "private"
+variable "azure_subscription_id" {
+  description = "Azure Subscription ID where resources will be deployed"
+  type        = string
 }
 
-# Modules: Shared
-module "shared" {
+# Data Sources - Existing Azure Resources
+data "azurerm_resource_group" "target_rg" {
+  name = var.azure_resource_group_name
+}
+
+data "azurerm_storage_account" "target_storage" {
+  name                = var.azure_storage_account_name
+  resource_group_name = var.azure_resource_group_name
+}
+
+# Shared Infrastructure Module
+# Contains common resources like Container Registry and App Environment
+module "shared_infrastructure" {
   source = "./shared"
 
-  resource_group_name = data.azurerm_resource_group.existing.name
-  location            = data.azurerm_resource_group.existing.location
+  resource_group_name = data.azurerm_resource_group.target_rg.name
+  location            = data.azurerm_resource_group.target_rg.location
+  storage_account_id  = data.azurerm_storage_account.target_storage.id
 }
 
-# Modules: Project for Azure DevOps Mate
-module "project_azuredevopsmate" {
+# Project: Azure DevOps Mate
+# Contains project-specific resources and configurations
+module "project_azure_devops_mate" {
   source = "./proj-azuredevopsmate"
 
-  resource_group_name                           = var.resource_group_name
-  location                                      = data.azurerm_resource_group.existing.location
-  acr_id                                        = module.shared.acr_id
-  acr_login_server                              = module.shared.acr_login_server
-  container_app_environment_id                  = module.shared.ace_id
-  application_insights_connection_string        = module.shared.application_insights_connection_string
-  storage_account_id                            = data.azurerm_storage_account.existing.id
-  container_name_for_app_configs                = azurerm_storage_container.app_configs.name
-  asp_flex_id                                   = module.shared.asp_flex_id
-  functions_backplane_id                        = module.shared.storage_account_functions_backplane_id
-  functions_backplane_name                      = module.shared.storage_account_functions_backplane_name
-  functions_backplane_primary_connection_string = module.shared.storage_account_functions_backplane_primary_connection_string
+  resource_group_name                        = var.azure_resource_group_name
+  location                                   = data.azurerm_resource_group.target_rg.location
+  storage_account_id                         = data.azurerm_storage_account.target_storage.id
+  acr_id                                     = module.shared_infrastructure.acr_id
+  acr_login_server                           = module.shared_infrastructure.acr_login_server
+  ace_id                                     = module.shared_infrastructure.ace_id
+  application_insights_connection_string     = module.shared_infrastructure.application_insights_connection_string
+  storage_account_container_app_configs_name = module.shared_infrastructure.storage_account_container_app_configs_name
 }

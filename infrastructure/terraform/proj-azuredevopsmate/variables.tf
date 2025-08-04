@@ -1,59 +1,40 @@
 variable "resource_group_name" {
   type        = string
-  description = "Name of the existing resource group"
+  description = "Name of the existing Azure Resource Group for deployment"
 }
 
 variable "location" {
   type        = string
-  description = "Azure region for the resources"
-}
-
-variable "acr_id" {
-  type        = string
-  description = "Resource ID of the ACR (used for role assignment)"
-}
-
-variable "acr_login_server" {
-  type        = string
-  description = "Login server URL for the Azure Container Registry"
-}
-
-variable "container_app_environment_id" {
-  type        = string
-  description = "ID of the Container App Environment"
-}
-
-variable "application_insights_connection_string" {
-  type        = string
-  description = "Connection string for the shared Application Insights instance"
+  description = "Azure region where resources will be deployed (e.g., westeurope, eastus)"
 }
 
 variable "storage_account_id" {
   type        = string
-  description = "ID of the Storage Account"
+  description = "Resource ID of the Azure Storage Account used for application data"
 }
 
-variable "container_name_for_app_configs" {
+variable "storage_account_container_app_configs_name" {
   type        = string
-  description = "Container name for App Configurations"
+  description = "Name of the storage container that holds application configuration files"
 }
 
-variable "asp_flex_id" {
+variable "acr_id" {
   type        = string
-  description = "ID of the App Service Plan for Flex Consumption"
+  description = "Resource ID of the Azure Container Registry for container image storage"
 }
 
-variable "functions_backplane_id" {
+variable "acr_login_server" {
   type        = string
-  description = "ID of the Storage Account for functions backplane"
+  description = "FQDN of the Azure Container Registry (e.g., myregistry.azurecr.io)"
 }
 
-variable "functions_backplane_name" {
+variable "ace_id" {
   type        = string
-  description = "Name of the Storage Account for functions backplane"
+  description = "Resource ID of the Azure Container App Environment where apps will be deployed"
 }
 
-variable "functions_backplane_primary_connection_string" {
+variable "application_insights_connection_string" {
   type        = string
-  description = "Primary Connection String of the Storage Account for functions backplane"
+  description = "Connection string for Application Insights telemetry collection"
+  sensitive   = true
 }

@@ -24,7 +24,6 @@
   </Folder>
   <Folder Name="/Projects/" />
   <Folder Name="/Projects/Azure DevOps Mate/">
-    <Project Path="proj-azuredevopsmate/CabaVS.AzureDevOpsMate.Functions/CabaVS.AzureDevOpsMate.Functions.csproj" />
     <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" />
   </Folder>
   <Folder Name="/Shared/">

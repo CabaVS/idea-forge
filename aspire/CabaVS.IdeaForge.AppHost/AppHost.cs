@@ -4,7 +4,7 @@ IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(ar
 
 // Parameters
 IResourceBuilder<ParameterResource> configUrlForAzureDevOpsMate =
-    builder.AddParameter("azuredevopsmate-config-url", true);
+    builder.AddParameter("project-config-url-azuredevopsmate", true);
 
 // Storage Account (emulated with Azurite)
 IResourceBuilder<AzureStorageResource> azurite = builder.AddAzureStorage("stcabavsideaforge")
@@ -15,18 +15,10 @@ IResourceBuilder<AzureStorageResource> azurite = builder.AddAzureStorage("stcaba
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent));
 IResourceBuilder<AzureBlobStorageResource> blobsResource = azurite.AddBlobs("blobs");
-IResourceBuilder<AzureTableStorageResource> tablesResource = azurite.AddTables("tables");
 
 // Azure DevOps Mate
-builder.AddProject<Projects.CabaVS_AzureDevOpsMate>("aca-azuredevopsmateapi")
+builder.AddProject<Projects.CabaVS_AzureDevOpsMate>("aca-azuredevopsmate")
     .WithEnvironment("CVS_CONFIGURATION_FROM_AZURE_URL", configUrlForAzureDevOpsMate)
     .WithReference(blobsResource).WaitFor(blobsResource);
-
-builder.AddAzureFunctionsProject<Projects.CabaVS_AzureDevOpsMate_Functions>("func-azuredevopsmate")
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development") // Not loaded from launchSettings.json
-    .WithEnvironment("CVS_CONFIGURATION_FROM_AZURE_URL", configUrlForAzureDevOpsMate)
-    .WithHostStorage(azurite)
-    .WithReference(blobsResource).WaitFor(blobsResource)
-    .WithReference(tablesResource).WaitFor(tablesResource);
 
 await builder.Build().RunAsync();

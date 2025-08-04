@@ -6,9 +6,6 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $TenantId,
 
-    [Parameter(Mandatory = $false)]
-    [string] $Environment,
-
     # Format: owner/repo (e.g., myorg/myinfra)
     [Parameter(Mandatory = $true)]
     [string] $GitHubRepo,
@@ -35,14 +32,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $ResourceGroupName = "rg-cabavsideaforge"
-if (-not [string]::IsNullOrWhiteSpace($Environment)) {
-    $ResourceGroupName = "$ResourceGroupName-$Environment"
-}
-
 $AppName = "gh-actions-terraform"
-if (-not [string]::IsNullOrWhiteSpace($Environment)) {
-    $AppName = "$AppName-$Environment"
-}
 
 Write-Host "-> Creating app registration: $AppName"
 $App = az ad app create --display-name $AppName | ConvertFrom-Json
@@ -110,9 +100,6 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $StorageAccountName = "stcabavsideaforge"
-if (-not [string]::IsNullOrWhiteSpace($Environment)) {
-    $StorageAccountName = "$StorageAccountName$Environment"
-}
 
 $TerraformStateContainerName = "tfstate"
 

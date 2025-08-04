@@ -1,31 +1,29 @@
+# Monitoring Outputs
 output "application_insights_connection_string" {
-  value = azurerm_application_insights.app_insights.connection_string
+  description = "Connection string for Application Insights integration"
+  value       = azurerm_application_insights.app_insights.connection_string
+  sensitive   = true
 }
 
+# Container Registry Outputs
 output "acr_id" {
-  value = azurerm_container_registry.acr.id
+  description = "Resource ID of the Azure Container Registry"
+  value       = azurerm_container_registry.acr.id
 }
 
 output "acr_login_server" {
-  value = azurerm_container_registry.acr.login_server
+  description = "Login server URL for the Azure Container Registry"
+  value       = azurerm_container_registry.acr.login_server
 }
 
+# Container App Environment Outputs
 output "ace_id" {
-  value = azurerm_container_app_environment.ace.id
+  description = "Resource ID of the Azure Container App Environment"
+  value       = azurerm_container_app_environment.ace.id
 }
 
-output "asp_flex_id" {
-  value = azurerm_service_plan.flex_plan.id
-}
-
-output "storage_account_functions_backplane_id" {
-  value = azurerm_storage_account.function_backplane.id
-}
-
-output "storage_account_functions_backplane_name" {
-  value = azurerm_storage_account.function_backplane.name
-}
-
-output "storage_account_functions_backplane_primary_connection_string" {
-  value = azurerm_storage_account.function_backplane.primary_connection_string
+# Storage Outputs
+output "storage_account_container_app_configs_name" {
+  description = "Name of the storage container used for application configurations"
+  value       = azurerm_storage_container.app_configs.name
 }

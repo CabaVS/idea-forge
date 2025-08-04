@@ -7,10 +7,7 @@ param(
     [string] $TenantId,
 
     [Parameter(Mandatory = $false)]
-    [string] $Location = "westeurope",
-
-    [Parameter(Mandatory = $false)]
-    [string] $Environment
+    [string] $Location = "westeurope"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,9 +27,6 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $ResourceGroupName = "rg-cabavsideaforge"
-if (-not [string]::IsNullOrWhiteSpace($Environment)) {
-    $ResourceGroupName = "$ResourceGroupName-$Environment"
-}
 
 Write-Host "-> Creating resource group: $ResourceGroupName in $Location"
 az group create `
@@ -45,9 +39,6 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $StorageAccountName = "stcabavsideaforge"
-if (-not [string]::IsNullOrWhiteSpace($Environment)) {
-    $StorageAccountName = "$StorageAccountName$Environment"
-}
 
 Write-Host "-> Creating storage account: $StorageAccountName"
 az storage account create `

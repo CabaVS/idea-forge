@@ -1,4 +1,5 @@
-# Log Analytics Workspace
+# Monitoring Infrastructure
+# Log Analytics Workspace for centralized logging
 resource "azurerm_log_analytics_workspace" "law" {
   name                = "log-cabavsideaforge"
   location            = var.location
@@ -7,7 +8,7 @@ resource "azurerm_log_analytics_workspace" "law" {
   retention_in_days   = 30
 }
 
-# Application Insights
+# Application Insights for application monitoring and telemetry
 resource "azurerm_application_insights" "app_insights" {
   name                 = "appi-cabavsideaforge"
   location             = var.location
@@ -18,7 +19,8 @@ resource "azurerm_application_insights" "app_insights" {
   daily_data_cap_in_gb = 1
 }
 
-# Azure Container Registry
+# Container Infrastructure
+# Azure Container Registry for storing application container images
 resource "azurerm_container_registry" "acr" {
   name                = "acrcabavsideaforge"
   resource_group_name = var.resource_group_name
@@ -27,7 +29,7 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled       = false
 }
 
-# Container App Environment
+# Container App Environment for running containerized applications
 resource "azurerm_container_app_environment" "ace" {
   name                       = "ace-cabavsideaforge"
   location                   = var.location
@@ -35,25 +37,10 @@ resource "azurerm_container_app_environment" "ace" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
 }
 
-# App Service Plan for Flex Consumption
-resource "azurerm_service_plan" "flex_plan" {
-  name                = "asp-cabavsideaforge-flex"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  os_type             = "Linux"
-  sku_name            = "FC1"
-}
-
-# Storage Account for Function Apps
-resource "azurerm_storage_account" "function_backplane" {
-  name                = "stcabavsideaforgefunc"
-  resource_group_name = var.resource_group_name
-  location            = var.location
-
-  account_tier               = "Standard"
-  account_replication_type   = "LRS"
-  account_kind               = "StorageV2"
-  https_traffic_only_enabled = true
-
-  min_tls_version = "TLS1_2"
+# Storage Infrastructure
+# Container for storing application configuration files
+resource "azurerm_storage_container" "app_configs" {
+  name                  = "app-configs"
+  storage_account_id    = var.storage_account_id
+  container_access_type = "private"
 }
