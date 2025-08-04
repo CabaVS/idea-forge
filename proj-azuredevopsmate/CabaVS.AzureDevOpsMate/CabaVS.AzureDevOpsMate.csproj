@@ -6,6 +6,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\..\shared\CabaVS.Shared.Infrastructure\CabaVS.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\CabaVS.AzureDevOpsMate.Shared\CabaVS.AzureDevOpsMate.Shared.csproj" />
   </ItemGroup>
   
 </Project>

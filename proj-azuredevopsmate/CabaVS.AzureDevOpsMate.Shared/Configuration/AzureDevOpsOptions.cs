@@ -1,6 +1,6 @@
-﻿namespace CabaVS.AzureDevOpsMate.Configuration;
+﻿namespace CabaVS.AzureDevOpsMate.Shared.Configuration;
 
-internal sealed class AzureDevOpsOptions
+public sealed class AzureDevOpsOptions
 {
     public string AccessToken { get; set; } = string.Empty;
     public string OrganizationUrl { get; set; } = string.Empty;

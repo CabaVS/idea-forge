@@ -1,9 +1,8 @@
 using System.Globalization;
 using System.Xml.Linq;
-using CabaVS.AzureDevOpsMate.Configuration;
 using CabaVS.AzureDevOpsMate.Constants;
-using CabaVS.AzureDevOpsMate.Extensions;
-using CabaVS.AzureDevOpsMate.Models;
+using CabaVS.AzureDevOpsMate.Shared.Configuration;
+using CabaVS.AzureDevOpsMate.Shared.Models;
 using CabaVS.Shared.Infrastructure;
 using Microsoft.Extensions.Options;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -171,9 +170,7 @@ app.MapGet(
                         ? identityRef.UniqueName.Split('@').FirstOrDefault(string.Empty)
                         : string.Empty,
                     RemainingWork = wi.Fields.GetCastedValueOrDefault(FieldNames.RemainingWork, 0.0),
-                    RemainingWorkType = wi.Fields.GetCastedValueOrDefault(FieldNames.WorkItemType, string.Empty) is "Bug"
-                        ? RemainingWorkType.Bugs
-                        : tags.DetermineFromTags()
+                    RemainingWorkType = tags.DetermineFromTags()
                 };
             })
             .GroupBy(x => x.Assignee)
@@ -183,10 +180,8 @@ app.MapGet(
                 return new
                 {
                     Assignee = string.IsNullOrWhiteSpace(g.Key) ? "UNKNOWN ASSIGNEE" : g.Key.ToUpperInvariant(),
-                    TotalRemainingWork = new RemainingWorkModel(
-                        lookupByType[RemainingWorkType.Bugs].Sum(x => x.RemainingWork),
+                    TotalRemainingWork = new RemainingWork(
                         lookupByType[RemainingWorkType.Functionality].Sum(x => x.RemainingWork),
-                        lookupByType[RemainingWorkType.Periodic].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Requirements].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Technical].Sum(x => x.RemainingWork),
                         lookupByType[RemainingWorkType.Other].Sum(x => x.RemainingWork))
@@ -194,30 +189,24 @@ app.MapGet(
             })
             .OrderByDescending(x => x.TotalRemainingWork)
             .ThenBy(x => x.Assignee);
-        var groupedByTeam = groupedByAssignee
-            .Select(x => new
-            {
-                Team = teamsDefinitionOptions.Value.Teams.SingleOrDefault(
+        IOrderedEnumerable<RemainingWorkResponseItem> groupedByTeam = groupedByAssignee
+            .Select(x => new RemainingWorkResponseItem(
+                teamsDefinitionOptions.Value.Teams.SingleOrDefault(
                     y => y.Value.Contains(x.Assignee),
                     new KeyValuePair<string, HashSet<string>>($"UNKNOWN TEAM on {x.Assignee}", [])).Key,
-                RemainingWork = x.TotalRemainingWork
-            })
+                x.TotalRemainingWork))
             .GroupBy(x => x.Team)
-            .Select(g => new
-            {
-                Team = g.Key,
-                RemainingWork = g.Select(x => x.RemainingWork).Sum(),
-            })
+            .Select(g => new RemainingWorkResponseItem(
+                g.Key,
+                g.Select(x => x.RemainingWork).Sum()))
             .OrderByDescending(x => x.RemainingWork)
             .ThenBy(x => x.Team);
         
         return Results.Ok(
-            new
-            {
-                Id = root.Id!.Value,
-                Title = root.Fields.GetCastedValueOrDefault(FieldNames.Title, string.Empty),
-                Report = groupedByTeam
-            });
+            new RemainingWorkResponse(
+                root.Id!.Value,
+                root.Fields.GetCastedValueOrDefault(FieldNames.Title, string.Empty),
+                groupedByTeam.ToArray()));
     });
 
 await app.RunAsync();
