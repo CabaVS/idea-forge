@@ -43,15 +43,6 @@ resource "azurerm_container_app" "app_azuredevopsmate" {
       label           = "primary"
       latest_revision = true
     }
-
-    # TODO: This is a temporary security measure
-    # Should be replaced with proper network security rules
-    ip_security_restriction {
-      name             = "temporary-ip-block"
-      description      = "Temporarily blocks all public access"
-      ip_address_range = "0.0.0.0/0"
-      action           = "Deny"
-    }
   }
 
   registry {

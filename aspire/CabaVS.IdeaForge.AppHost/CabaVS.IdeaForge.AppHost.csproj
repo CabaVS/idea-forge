@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\proj-azuredevopsmate\CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker\CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker.csproj" />
       <ProjectReference Include="..\..\proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" />
     </ItemGroup>
 

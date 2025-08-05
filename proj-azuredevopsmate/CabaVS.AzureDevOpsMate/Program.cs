@@ -3,7 +3,7 @@ using System.Xml.Linq;
 using CabaVS.AzureDevOpsMate.Constants;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.AzureDevOpsMate.Shared.Models;
-using CabaVS.Shared.Infrastructure;
+using CabaVS.Shared.Infrastructure.ConfigurationProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
