@@ -17,6 +17,8 @@ using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
+
 // Configuration
 builder.Configuration.AddJsonStreamFromBlob(
     builder.Environment.IsDevelopment());
