@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Xml.Linq;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using CabaVS.AzureDevOpsMate.Constants;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.AzureDevOpsMate.Shared.Models;
@@ -9,6 +10,9 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +24,39 @@ builder.Services.Configure<AzureDevOpsOptions>(
     builder.Configuration.GetSection("AzureDevOps"));
 builder.Services.Configure<TeamsDefinitionOptions>(
     builder.Configuration.GetSection("TeamsDefinition"));
+
+// Open Telemetry
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(_ => ResourceBuilder.CreateDefault())
+    .WithMetrics(metrics =>
+    {
+        MeterProviderBuilder meterProviderBuilder = metrics
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation();
+        if (builder.Environment.IsDevelopment())
+        {
+            meterProviderBuilder.AddOtlpExporter();
+        }
+        else
+        {
+            meterProviderBuilder.AddAzureMonitorMetricExporter();
+        }
+    })
+    .WithTracing(tracing =>
+    {
+        TracerProviderBuilder tracerProviderBuilder = tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation();
+        if (builder.Environment.IsDevelopment())
+        {
+            tracerProviderBuilder.AddOtlpExporter();
+        }
+        else
+        {
+            tracerProviderBuilder.AddAzureMonitorTraceExporter();
+        }
+    });
 
 // Services
 builder.Services.AddSingleton(sp =>
