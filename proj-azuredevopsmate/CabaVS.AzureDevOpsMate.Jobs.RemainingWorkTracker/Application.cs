@@ -2,7 +2,6 @@
 using Azure.Storage.Blobs;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.Shared.Infrastructure.Storage;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -10,7 +9,6 @@ namespace CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker;
 
 internal sealed class Application(
     ILogger<Application> logger,
-    IConfiguration configuration,
     IHttpClientFactory httpClientFactory,
     IBlobConnectionProvider blobConnectionProvider,
     IOptions<RemainingWorkTrackerOptions> options)
@@ -26,11 +24,7 @@ internal sealed class Application(
             return;
         }
         
-        using HttpClient httpClient = httpClientFactory.CreateClient();
-        
-        // Temporary. Configure through DI
-        httpClient.BaseAddress = new Uri(
-            configuration["services:aca-azuredevopsmate:https:0"] ?? options.Value.ApiUrlBase);
+        using HttpClient httpClient = httpClientFactory.CreateClient(Constants.HttpClientNames.AcaAzureDevOpsMate);
 
         foreach (RemainingWorkTrackerOptions.ToTrackItem item in itemsToTrack)
         {
