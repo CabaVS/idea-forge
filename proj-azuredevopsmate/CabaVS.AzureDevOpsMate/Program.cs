@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,12 @@ builder.Services.Configure<AzureDevOpsOptions>(
     builder.Configuration.GetSection("AzureDevOps"));
 builder.Services.Configure<TeamsDefinitionOptions>(
     builder.Configuration.GetSection("TeamsDefinition"));
+
+// Logging
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+builder.Host.UseSerilog();
 
 // Open Telemetry
 builder.Services.AddOpenTelemetry()
@@ -89,22 +96,30 @@ app.MapGet(
         int workItemId,
         WorkItemTrackingHttpClient workItemClient,
         IOptions<TeamsDefinitionOptions> teamsDefinitionOptions,
+        ILogger<Program> logger,
         CancellationToken cancellationToken) =>
     {
+        logger.LogInformation("Request received for reporting info. WorkItemId: {WorkItemId}", workItemId);
+
         WorkItem? workItem = await workItemClient.GetWorkItemAsync(
             workItemId,
             fields: [FieldNames.ReportingInfo],
             cancellationToken: cancellationToken);
+
         if (workItem is null)
         {
+            logger.LogWarning("Work item not found. WorkItemId: {WorkItemId}", workItemId);
             return Results.NotFound();
         }
 
         var reportingInfo = workItem.Fields.GetCastedValueOrDefault(FieldNames.ReportingInfo, string.Empty);
         if (string.IsNullOrWhiteSpace(reportingInfo))
         {
+            logger.LogInformation("ReportingInfo field is empty for WorkItemId: {WorkItemId}", workItemId);
             return Results.Ok(Array.Empty<object>());
         }
+
+        logger.LogInformation("Processing reporting info for WorkItemId: {WorkItemId}", workItemId);
 
         var sanitizedHtml = reportingInfo.Replace("&nbsp;", " ", StringComparison.InvariantCulture);
         var parsed = XDocument.Parse(sanitizedHtml)
@@ -139,6 +154,8 @@ app.MapGet(
             .OrderByDescending(x => x.Total)
             .ThenBy(x => x.Team);
 
+        logger.LogInformation("Reporting info processing completed for WorkItemId: {WorkItemId}", workItemId);
+
         return Results.Ok(groupedByTeam);
     });
 
@@ -149,22 +166,31 @@ app.MapGet(
         int workItemId,
         WorkItemTrackingHttpClient workItemClient,
         IOptions<TeamsDefinitionOptions> teamsDefinitionOptions,
+        ILogger<Program> logger,
         CancellationToken cancellationToken) =>
     {
+        logger.LogInformation("Request received for remaining work. WorkItemId: {WorkItemId}", workItemId);
+
         WorkItem? root = await workItemClient.GetWorkItemAsync(
             workItemId,
             fields: [FieldNames.Title],
             cancellationToken: cancellationToken);
+
         if (root is null)
         {
+            logger.LogWarning("Root work item not found. WorkItemId: {WorkItemId}", workItemId);
             return Results.NotFound();
         }
+
+        logger.LogInformation("Starting traversal for remaining work. Root WorkItemId: {WorkItemId}", workItemId);
 
         var toTraverse = new HashSet<int> { root.Id!.Value };
         var collected = new List<WorkItem>();
 
         do
         {
+            logger.LogInformation("Processing batch of work items. Items to traverse: {Count}", toTraverse.Count);
+
             var currentBatch = (await Task.WhenAll(toTraverse
                 .Chunk(200)
                 .Select(batch => workItemClient.GetWorkItemsAsync(
@@ -183,6 +209,9 @@ app.MapGet(
                 .ExceptBy(tasksOrBugs.Select(wi => wi.Id), wi => wi.Id)
                 .ToArray();
 
+            logger.LogInformation("Collected {TaskCount} tasks/bugs and {OtherCount} other work items.",
+                tasksOrBugs.Count(), otherTypes.Count());
+
             collected.AddRange(
                 tasksOrBugs
                     .Where(wi => wi.Fields.GetCastedValueOrDefault(FieldNames.State, string.Empty) is not "Closed" and not "Removed"));
@@ -193,7 +222,10 @@ app.MapGet(
                 .Where(r => r.Rel == RelationshipNames.ParentToChild)
                 .Select(r => int.Parse(r.Url.Split('/').LastOrDefault() ?? string.Empty, CultureInfo.InvariantCulture))
                 .ToHashSet();
+
         } while (toTraverse.Count > 0);
+
+        logger.LogInformation("Completed traversal for remaining work. WorkItemId: {WorkItemId}", workItemId);
 
         var groupedByAssignee = collected
             .Select(wi =>
@@ -239,6 +271,8 @@ app.MapGet(
             .OrderByDescending(x => x.RemainingWork)
             .ThenBy(x => x.Team);
         
+        logger.LogInformation("Remaining work processing completed for WorkItemId: {WorkItemId}", workItemId);
+
         return Results.Ok(
             new RemainingWorkResponse(
                 root.Id!.Value,
