@@ -15,8 +15,8 @@ using IHost host = Host.CreateDefaultBuilder(args)
         
         services.AddHttpClient();
 
-        services.AddSingleton<IBlobServiceClientProvider>(
-            _ => new BlobServiceClientProvider(context.Configuration, !context.HostingEnvironment.IsDevelopment()));
+        services.AddSingleton<IBlobConnectionProvider>(
+            _ => new BlobConnectionProvider(context.Configuration, !context.HostingEnvironment.IsDevelopment()));
         
         services.AddSingleton<Application>();
     })
