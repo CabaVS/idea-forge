@@ -138,7 +138,7 @@ jobs:
             CVS_CONFIGURATION_FROM_AZURE_URL=${{ secrets.PROJ_AZDM_CONFIG_URL }}
             
   build-job-rwt:
-    name: Build job (Remaining Work Tracker)
+    name: Build job (RWT)
     runs-on: ubuntu-latest
 
     steps:
@@ -211,3 +211,35 @@ jobs:
         run: |
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:latest
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ steps.vars.outputs.sha_tag }}
+          
+  deploy-to-aca-job-rwt:
+    environment: production
+    name: Deploy to ACA
+    needs: [ push-image-job-rwt ]
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Update ACA Job image
+        run: |
+          az containerapp job update \
+            --name ${{ secrets.PROJ_AZDM_JOB_RWT_NAME }} \
+            --resource-group ${{ secrets.RG_NAME }} \
+            --image ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.push-image-job-rwt.outputs.sha_tag }} \
+            --set-env-vars \
+              APPLICATIONINSIGHTS_CONNECTION_STRING=${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }} \
+              AZURE_CLIENT_ID=${{ secrets.PROJ_AZDM_JOB_RWT_UAMI_CLIENT_ID }} \
+              CVS_CONFIGURATION_FROM_AZURE_URL=${{ secrets.PROJ_AZDM_CONFIG_URL }} \
+              DOTNET_ENVIRONMENT=${{ secrets.DOTNET_ENVIRONMENT }}
