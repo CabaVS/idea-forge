@@ -123,8 +123,7 @@ resource "azurerm_container_app_job" "job_azuredevopsmate_rwt" {
   template {
     container {
       name   = "job"
-      image  = "mcr.microsoft.com/dotnet/runtime-deps:8.0"
-      command = ["sh", "-c", "echo Hello from dotnet runtime-deps!"]
+      image  = "mcr.microsoft.com/dotnet/samples:dotnetapp"
       cpu    = 0.25
       memory = "0.5Gi"
 
