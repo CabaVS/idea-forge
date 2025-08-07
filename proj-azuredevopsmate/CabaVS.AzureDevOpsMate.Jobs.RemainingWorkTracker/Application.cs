@@ -52,9 +52,24 @@ internal sealed class Application(
             }
             
             logger.LogInformation("Response received. Proceeding to blob upload.");
+            
+            var blobName = $"rwt_{item.WorkItemId}_{DateTime.UtcNow.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}.json";
 
             BlobServiceClient blobServiceClient = blobConnectionProvider.GetBlobServiceClient();
-            _ = blobServiceClient.AccountName;
+            BlobContainerClient? blocContainerClient = blobServiceClient.GetBlobContainerClient("proj-azuredevopsmate");
+            BlobClient? blobClient = blocContainerClient.GetBlobClient(blobName);
+
+            if (await blobClient.ExistsAsync(cancellationToken: cancellationToken))
+            {
+                logger.LogWarning("Blob {BlobName} already exists. Skipping upload.", blobName);
+                continue;
+            }
+
+            _ = await blobClient.UploadAsync(
+                await response.Content.ReadAsStreamAsync(cancellationToken),
+                overwrite: false,
+                cancellationToken: cancellationToken);
+            logger.LogInformation("Blob {BlobName} uploaded.", blobName);
         }
         
         logger.LogInformation("Remaining Work Tracker finished at {Timestamp} UTC.", DateTime.UtcNow);
