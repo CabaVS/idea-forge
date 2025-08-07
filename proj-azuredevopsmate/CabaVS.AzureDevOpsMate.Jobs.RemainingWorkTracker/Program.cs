@@ -1,4 +1,5 @@
-﻿using CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker;
+﻿using Azure.Monitor.OpenTelemetry.Exporter;
+using CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.Shared.Infrastructure.ConfigurationProviders;
 using CabaVS.Shared.Infrastructure.Storage;
@@ -6,6 +7,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Serilog;
 
 using IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) => config.AddJsonStreamFromBlob(
@@ -14,6 +19,37 @@ using IHost host = Host.CreateDefaultBuilder(args)
     {
         services.Configure<RemainingWorkTrackerOptions>(
             context.Configuration.GetSection("RemainingWorkTracker"));
+        
+        services.AddOpenTelemetry()
+            .ConfigureResource(_ => ResourceBuilder.CreateDefault())
+            .WithMetrics(metrics =>
+            {
+                MeterProviderBuilder meterProviderBuilder = metrics
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation();
+                if (context.HostingEnvironment.IsDevelopment())
+                {
+                    meterProviderBuilder.AddOtlpExporter();
+                }
+                else
+                {
+                    meterProviderBuilder.AddAzureMonitorMetricExporter();
+                }
+            })
+            .WithTracing(tracing =>
+            {
+                TracerProviderBuilder tracerProviderBuilder = tracing
+                    .AddSource(Constants.ActivityNames.RemainingWorkTracker)
+                    .AddHttpClientInstrumentation();
+                if (context.HostingEnvironment.IsDevelopment())
+                {
+                    tracerProviderBuilder.AddOtlpExporter();
+                }
+                else
+                {
+                    tracerProviderBuilder.AddAzureMonitorTraceExporter();
+                }
+            });
         
         services.AddHttpClient(
             Constants.HttpClientNames.AcaAzureDevOpsMate,
@@ -31,9 +67,9 @@ using IHost host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<IBlobConnectionProvider>(
             _ => new BlobConnectionProvider(context.Configuration, !context.HostingEnvironment.IsDevelopment()));
         
-        services.AddSingleton<Application>();
+        services.AddHostedService<Application>();
     })
+    .UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration))
     .Build();
 
-Application application = host.Services.GetRequiredService<Application>();
-await application.RunAsync();
+await host.RunAsync();

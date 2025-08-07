@@ -1,7 +1,9 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using Azure.Storage.Blobs;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.Shared.Infrastructure.Storage;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,10 +13,15 @@ internal sealed class Application(
     ILogger<Application> logger,
     IHttpClientFactory httpClientFactory,
     IBlobConnectionProvider blobConnectionProvider,
-    IOptions<RemainingWorkTrackerOptions> options)
+    IOptions<RemainingWorkTrackerOptions> options,
+    IHostApplicationLifetime lifetime) : IHostedService
 {
-    public async Task RunAsync()
+    private static readonly ActivitySource ActivitySource = new(Constants.ActivityNames.RemainingWorkTracker);
+
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
+        using Activity? activity = ActivitySource.StartActivity();
+        
         logger.LogInformation("Remaining Work Tracker started at {Timestamp} UTC.", DateTime.UtcNow);
         
         RemainingWorkTrackerOptions.ToTrackItem[] itemsToTrack = options.Value.ToTrackItems;
@@ -29,14 +36,15 @@ internal sealed class Application(
         foreach (RemainingWorkTrackerOptions.ToTrackItem item in itemsToTrack)
         {
             logger.LogInformation("Processing item {WorkItemId} from {From} to {To}.", item.WorkItemId, item.From, item.To);
-            
+
             HttpResponseMessage response = await httpClient.GetAsync(
                 new Uri(
                     string.Format(
                         CultureInfo.InvariantCulture,
                         options.Value.ApiUrlForRemainingWork,
                         item.WorkItemId),
-                    UriKind.Relative));
+                    UriKind.Relative),
+                cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogError("Failed to get remaining work for item {WorkItemId} from {From} to {To}.", item.WorkItemId, item.From, item.To);
@@ -47,10 +55,12 @@ internal sealed class Application(
 
             BlobServiceClient blobServiceClient = blobConnectionProvider.GetBlobServiceClient();
             _ = blobServiceClient.AccountName;
-            
-            // Export OTEL (same for API)
         }
         
         logger.LogInformation("Remaining Work Tracker finished at {Timestamp} UTC.", DateTime.UtcNow);
+        
+        lifetime.StopApplication();
     }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
