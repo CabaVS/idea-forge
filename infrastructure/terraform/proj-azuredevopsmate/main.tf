@@ -74,3 +74,10 @@ resource "azurerm_container_app" "app_azuredevopsmate" {
     ]
   }
 }
+
+# Storage Container creation for AzureDevOpsMate
+resource "azurerm_storage_container" "container_azuredevopsmate" {
+  name                  = var.storage_account_container_azuredevopsmate_name
+  storage_account_id    = var.storage_account_id
+  container_access_type = "private"
+}

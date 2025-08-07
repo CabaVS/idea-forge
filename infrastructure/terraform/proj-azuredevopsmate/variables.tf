@@ -18,6 +18,12 @@ variable "storage_account_container_app_configs_name" {
   description = "Name of the storage container that holds application configuration files"
 }
 
+variable "storage_account_container_azuredevopsmate_name" {
+  type        = string
+  description = "Name of the storage container for Azure DevOps Mate project"
+  default     = "proj-azuredevopsmate"
+}
+
 variable "acr_id" {
   type        = string
   description = "Resource ID of the Azure Container Registry for container image storage"
