@@ -32,14 +32,15 @@
     <Project Path="shared\CabaVS.Shared.Infrastructure\CabaVS.Shared.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
     <File Path=".editorconfig" />
     <File Path=".gitignore" />
+    <File Path=".github\workflows\infrastructure.yml" />
+    <File Path=".github\workflows\proj-azuredevopsmate.yml" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
     <File Path="global.json" />
     <File Path="proj.azuredevopsmate.Dockerfile" />
-    <File Path=".dockerignore" />
-    <File Path=".github\workflows\proj-azuredevopsmate.yml" />
-    <File Path=".github\workflows\infrastructure.yml" />
+    <File Path="proj.azuredevopsmatejobrwt.Dockerfile" />
   </Folder>
 </Solution>

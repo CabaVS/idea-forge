@@ -21,9 +21,11 @@ concurrency:
 env:
   BUILD_CONFIGURATION: "Release"
   DOCKER_IMAGE_NAME: "proj-azuredevopsmate"
+  DOCKER_IMAGE_NAME_JOB_RWT: "proj-azuredevopsmate-jobs-rwt"
   DOCKERFILE_PATH: "./proj.azuredevopsmate.Dockerfile"
+  DOCKERFILE_PATH_JOB_RWT: "./proj.azuredevopsmatejobrwt.Dockerfile"
   PATH_TO_CSPROJ: "./proj-azuredevopsmate/CabaVS.AzureDevOpsMate/CabaVS.AzureDevOpsMate.csproj"
-  PATH_TO_FUNCTIONS_CSPROJ: "./proj-azuredevopsmate/CabaVS.AzureDevOpsMate.Functions/CabaVS.AzureDevOpsMate.Functions.csproj"
+  PATH_TO_CSPROJ_JOBS_RWT: "./proj-azuredevopsmate/CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker/CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker.csproj"
   PATH_TO_GLOBAL_JSON: "./global.json"
 
 jobs:
@@ -134,3 +136,78 @@ jobs:
             ASPNETCORE_ENVIRONMENT=${{ secrets.ASPNETCORE_ENVIRONMENT }}
             AZURE_CLIENT_ID=${{ secrets.PROJ_AZDM_UAMI_CLIENT_ID }}
             CVS_CONFIGURATION_FROM_AZURE_URL=${{ secrets.PROJ_AZDM_CONFIG_URL }}
+            
+  build-job-rwt:
+    name: Build job (Remaining Work Tracker)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ${{ env.PATH_TO_GLOBAL_JSON }}
+
+      - name: Restore
+        run: dotnet restore ${{ env.PATH_TO_CSPROJ_JOBS_RWT }}
+
+      - name: Build
+        run: dotnet build ${{ env.PATH_TO_CSPROJ_JOBS_RWT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ env.PATH_TO_CSPROJ_JOBS_RWT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build -o ./publish
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-rwt-publish
+          path: ./publish
+          
+  push-image-job-rwt:
+    environment: production
+    name: Push image to ACR
+    needs: [ build-job-rwt ]
+    runs-on: ubuntu-latest
+
+    outputs:
+      sha_tag: ${{ steps.vars.outputs.sha_tag }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: job-rwt-publish
+          path: ./publish
+
+      - name: Set image tags
+        id: vars
+        run: |
+          echo "sha_tag=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build -f ${{ env.DOCKERFILE_PATH_JOB_RWT }} \
+            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:latest \
+            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ steps.vars.outputs.sha_tag }} .
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Docker Login to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Push image to ACR
+        run: |
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:latest
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ steps.vars.outputs.sha_tag }}
