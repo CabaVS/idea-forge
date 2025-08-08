@@ -216,6 +216,9 @@ jobs:
     environment: production
     name: Deploy to Container Job (RWT)
     needs: [ push-image-job-rwt ]
+      
+    # Using Windows runner + PowerShell because ACA Job env var updates via Azure CLI are unreliable on Linux/Bash runners.
+    # Verified 2025-08-08 after Linux/Bash path dropped env var values silently.
     runs-on: windows-latest
 
     permissions:
