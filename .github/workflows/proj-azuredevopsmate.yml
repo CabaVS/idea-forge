@@ -216,7 +216,7 @@ jobs:
     environment: production
     name: Deploy to Container Job (RWT)
     needs: [ push-image-job-rwt ]
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     permissions:
       id-token: write
@@ -232,13 +232,31 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Update ACA Job image
+      - name: Ensure containerapp extension is current
+        shell: pwsh
         run: |
-          az containerapp job update \
-            --name ${{ secrets.PROJ_AZDM_JOB_RWT_NAME }} \
-            --resource-group ${{ secrets.RG_NAME }} \
-            --replace-env-vars \
-              APPLICATIONINSIGHTS_CONNECTION_STRING=${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }} \
-              AZURE_CLIENT_ID=${{ secrets.PROJ_AZDM_JOB_RWT_UAMI_CLIENT_ID }} \
-              CVS_CONFIGURATION_FROM_AZURE_URL=${{ secrets.PROJ_AZDM_CONFIG_URL }} \
-              DOTNET_ENVIRONMENT=${{ secrets.DOTNET_ENVIRONMENT }}
+          az extension add --name containerapp --yes
+          az extension update --name containerapp
+          az version
+          
+      - name: Update ACA Job (PowerShell quoting)
+        shell: pwsh
+        run: |
+          $jobName = "${{ secrets.PROJ_AZDM_JOB_RWT_NAME }}"
+          $rg = "${{ secrets.RG_NAME }}"
+          $image = "${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.push-image-job-rwt.outputs.sha_tag }}"
+
+          $appInsights = "${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
+          $clientId = "${{ secrets.PROJ_AZDM_JOB_RWT_UAMI_CLIENT_ID }}"
+          $configUrl = "${{ secrets.PROJ_AZDM_CONFIG_URL }}"
+          $envName = "${{ secrets.DOTNET_ENVIRONMENT }}"
+
+          az containerapp job update `
+            --name $jobName `
+            --resource-group $rg `
+            --image $image `
+            --set-env-vars `
+              APPLICATIONINSIGHTS_CONNECTION_STRING="$appInsights" `
+              AZURE_CLIENT_ID="$clientId" `
+              CVS_CONFIGURATION_FROM_AZURE_URL="$configUrl" `
+              DOTNET_ENVIRONMENT="$envName"
