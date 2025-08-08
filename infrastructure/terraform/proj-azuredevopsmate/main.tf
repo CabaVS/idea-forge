@@ -107,8 +107,8 @@ resource "azurerm_container_app_job" "job_azuredevopsmate_rwt" {
   resource_group_name          = var.resource_group_name
   location                     = var.location
 
-  replica_timeout_in_seconds = 60
-  replica_retry_limit        = 5
+  replica_timeout_in_seconds = 300
+  replica_retry_limit        = 0
 
   identity {
     type         = "UserAssigned"
@@ -116,14 +116,15 @@ resource "azurerm_container_app_job" "job_azuredevopsmate_rwt" {
   }
 
   schedule_trigger_config {
-    cron_expression = "0 0 * * 2-6"
-    parallelism     = 1
+    cron_expression          = "0 0 * * 2-6"
+    parallelism              = 1
+    replica_completion_count = 1
   }
 
   template {
     container {
       name   = "job"
-      image  = "mcr.microsoft.com/dotnet/samples:dotnetapp"
+      image  = "mcr.microsoft.com/k8se/quickstart-jobs:latest"
       cpu    = 0.25
       memory = "0.5Gi"
 

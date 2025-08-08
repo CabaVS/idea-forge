@@ -4,8 +4,11 @@ terraform {
 
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "4.37.0"
+      source = "hashicorp/azurerm"
+
+      # ContainerAppConsoleLogs_CL not created in version 4.35.0
+      # https://github.com/hashicorp/terraform-provider-azurerm/issues/30116
+      version = "4.34.0"
     }
   }
 
