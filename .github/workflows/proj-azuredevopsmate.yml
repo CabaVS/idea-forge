@@ -237,7 +237,7 @@ jobs:
           az containerapp job update \
             --name ${{ secrets.PROJ_AZDM_JOB_RWT_NAME }} \
             --resource-group ${{ secrets.RG_NAME }} \
-            --image ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.push-image-job-rwt.outputs.sha_tag }} \
+#            --image ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.push-image-job-rwt.outputs.sha_tag }} \
             --replace-env-vars \
               APPLICATIONINSIGHTS_CONNECTION_STRING=${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }} \
               AZURE_CLIENT_ID=${{ secrets.PROJ_AZDM_JOB_RWT_UAMI_CLIENT_ID }} \
