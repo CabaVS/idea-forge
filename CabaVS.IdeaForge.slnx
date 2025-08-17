@@ -21,6 +21,7 @@
     <File Path="infrastructure\terraform\shared\main.tf" />
     <File Path="infrastructure\terraform\shared\outputs.tf" />
     <File Path="infrastructure\terraform\shared\variables.tf" />
+    <File Path="infrastructure\terraform\shared\acr_purge.yml" />
   </Folder>
   <Folder Name="/Projects/" />
   <Folder Name="/Projects/Azure DevOps Mate/">

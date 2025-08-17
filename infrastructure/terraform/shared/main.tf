@@ -29,6 +29,23 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled       = false
 }
 
+resource "azurerm_container_registry_task" "purge_keep10" {
+  name                  = "purge-keep10"
+  container_registry_id = azurerm_container_registry.acr.id
+
+  platform { os = "Linux" }
+
+  encoded_step {
+    task_content = file("${path.module}/acr_purge.yml")
+  }
+
+  timer_trigger {
+    name     = "nightly"
+    schedule = "0 0 * * *"
+    enabled  = true
+  }
+}
+
 # Container App Environment for running containerized applications
 resource "azurerm_container_app_environment" "ace" {
   name                       = "ace-cabavsideaforge"
