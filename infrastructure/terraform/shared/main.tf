@@ -29,6 +29,7 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled       = false
 }
 
+# Azure Container Registry task that runs nightly to purge old images, keeping the 10 most recent per repository
 resource "azurerm_container_registry_task" "purge_keep10" {
   name                  = "purge-keep10"
   container_registry_id = azurerm_container_registry.acr.id
