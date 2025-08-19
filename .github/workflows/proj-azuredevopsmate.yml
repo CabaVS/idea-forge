@@ -358,7 +358,7 @@ jobs:
           az extension update --name containerapp
           az version
 
-      - name: Determine if Container App Job (RWT) needs update
+      - name: Determine if CAJ (RWT) needs update
         id: diff
         shell: pwsh
         run: |
