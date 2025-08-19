@@ -147,7 +147,7 @@ jobs:
   deploy-to-aca:
     environment: production
     name: Deploy to ACA
-    needs: [push-image]
+    needs: [build-app, push-image]
     runs-on: ubuntu-latest
 
     permissions:
