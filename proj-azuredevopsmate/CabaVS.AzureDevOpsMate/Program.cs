@@ -279,7 +279,7 @@ app.MapGet(
             new RemainingWorkResponse(
                 root.Id!.Value,
                 root.Fields.GetCastedValueOrDefault(FieldNames.Title, string.Empty),
-                groupedByTeam.ToArray()));
+                [.. groupedByTeam]));
     });
 
 await app.RunAsync();
