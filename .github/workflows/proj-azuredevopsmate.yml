@@ -48,16 +48,20 @@ jobs:
         run: dotnet restore ${{ env.PATH_TO_CSPROJ }}
 
       - name: Build
-        run: dotnet build ${{ env.PATH_TO_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
-
+        run: |
+          dotnet build ${{ env.PATH_TO_CSPROJ }} \
+            --no-restore \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -p:ContinuousIntegrationBuild=true \
+            -p:Deterministic=true \
+            -p:IncludeSourceRevisionInInformationalVersion=false
+      
       - name: Publish
         run: |
           dotnet publish \
             --no-build \
             -c ${{ env.BUILD_CONFIGURATION }} \
             -o ./publish \
-            -p:ContinuousIntegrationBuild=true \
-            -p:Deterministic=true \
             ${{ env.PATH_TO_CSPROJ }}
 
       - name: Compute publish-output tag
@@ -215,6 +219,15 @@ jobs:
 
       - name: Build
         run: dotnet build ${{ env.PATH_TO_CSPROJ_JOBS_RWT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+        
+      - name: Build
+        run: |
+          dotnet build ${{ env.PATH_TO_CSPROJ_JOBS_RWT }} \
+            --no-restore \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -p:ContinuousIntegrationBuild=true \
+            -p:Deterministic=true \
+            -p:IncludeSourceRevisionInInformationalVersion=false
 
       - name: Publish
         run: |
@@ -222,8 +235,6 @@ jobs:
             --no-build \
             -c ${{ env.BUILD_CONFIGURATION }} \
             -o ./publish \
-            -p:ContinuousIntegrationBuild=true \
-            -p:Deterministic=true \
             ${{ env.PATH_TO_CSPROJ_JOBS_RWT }}
 
       - name: Compute publish-output tag (RWT)
