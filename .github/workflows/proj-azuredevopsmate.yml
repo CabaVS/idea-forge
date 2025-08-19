@@ -90,6 +90,9 @@ jobs:
     needs: [build-app]
     runs-on: ubuntu-latest
     
+    outputs:
+      content_tag: ${{ needs.build-app.outputs.content_tag }}
+    
     permissions:
       id-token: write
       contents: read
@@ -172,7 +175,7 @@ jobs:
         id: diff
         run: |
           set -euo pipefail
-          DESIRED="${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.build-app.outputs.content_tag }}"
+          DESIRED="${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.push-image.outputs.content_tag }}"
           CURRENT=$(az containerapp show \
             --name "${{ secrets.PROJ_AZDM_ACA_NAME }}" \
             --resource-group "${{ secrets.RG_NAME }}" \
@@ -192,7 +195,7 @@ jobs:
           registryUrl: ${{ secrets.ACR_NAME }}.azurecr.io
           containerAppName: ${{ secrets.PROJ_AZDM_ACA_NAME }}
           resourceGroup: ${{ secrets.RG_NAME }}
-          imageToDeploy: ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.build-app.outputs.content_tag }}
+          imageToDeploy: ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.push-image.outputs.content_tag }}
           environmentVariables: >
             APPLICATIONINSIGHTS_CONNECTION_STRING=${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
             ASPNETCORE_ENVIRONMENT=${{ secrets.ASPNETCORE_ENVIRONMENT }}
@@ -262,6 +265,9 @@ jobs:
     name: Push image to ACR (RWT)
     needs: [ build-job-rwt ]
     runs-on: ubuntu-latest
+    
+    outputs:
+      content_tag: ${{ needs.build-job-rwt.outputs.content_tag }}
 
     permissions:
       id-token: write
@@ -361,7 +367,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           $jobName = "${{ secrets.PROJ_AZDM_JOB_RWT_NAME }}"
           $rg = "${{ secrets.RG_NAME }}"
-          $desired = "${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.build-job-rwt.outputs.content_tag }}"
+          $desired = "${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.push-image-job-rwt.outputs.content_tag }}"
           $current = az containerapp job show --name $jobName --resource-group $rg --query "properties.template.containers[0].image" -o tsv
           Write-Host "Current: $current"
           Write-Host "Desired: $desired"
@@ -379,7 +385,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           $jobName = "${{ secrets.PROJ_AZDM_JOB_RWT_NAME }}"
           $rg = "${{ secrets.RG_NAME }}"
-          $image = "${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.build-job-rwt.outputs.content_tag }}"
+          $image = "${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.push-image-job-rwt.outputs.content_tag }}"
           $appInsights = "${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
           $clientId = "${{ secrets.PROJ_AZDM_JOB_RWT_UAMI_CLIENT_ID }}"
           $configUrl = "${{ secrets.PROJ_AZDM_CONFIG_URL }}"
