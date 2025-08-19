@@ -48,8 +48,27 @@ jobs:
         run: dotnet build ${{ env.PATH_TO_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
         
       - name: Publish
-        run: dotnet publish ${{ env.PATH_TO_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build -o ./publish
-  
+        run: dotnet publish ${{ env.PATH_TO_CSPROJ }} \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --no-build \
+          -o ./publish \
+          /p:ContinuousIntegrationBuild=true \
+          /p:Deterministic=true
+        
+      - name: Compute publish-output tag
+        id: tagcalc
+        run: |
+          set -euo pipefail
+          CONTENT_HASH=$(
+            cd ./publish
+            find . -type f ! -name '*.pdb' -print0 \
+              | sort -z \
+              | xargs -0 sha256sum \
+              | sha256sum \
+              | awk '{print $1}'
+          )
+          echo "content_tag=${CONTENT_HASH:0:12}" >> "$GITHUB_OUTPUT"      
+      
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
