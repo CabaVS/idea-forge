@@ -151,7 +151,7 @@ jobs:
   deploy-to-aca:
     environment: production
     name: Deploy to ACA
-    needs: [build-app, push-image]
+    needs: [push-image]
     runs-on: ubuntu-latest
 
     permissions:
@@ -324,7 +324,7 @@ jobs:
   deploy-to-aca-job-rwt:
     environment: production
     name: Deploy to Container Job (RWT)
-    needs: [ build-job-rwt, push-image-job-rwt ]
+    needs: [push-image-job-rwt]
     
     # Using Windows runner + PowerShell because ACA Job env var updates via Azure CLI are unreliable on Linux/Bash runners.
     # Verified 2025-08-08 after Linux/Bash path dropped env var values silently.
