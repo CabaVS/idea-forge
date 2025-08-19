@@ -116,20 +116,20 @@ jobs:
           EXISTS=$(az acr repository show-tags \
             -n ${{ secrets.ACR_NAME }} \
             --repository ${{ env.DOCKER_IMAGE_NAME }} \
-            --query "[?@=='${{ steps.tagcalc.outputs.content_tag }}'] | length(@)" -o tsv)
+            --query "[?@=='${{ needs.build-app.outputs.content_tag }}'] | length(@)" -o tsv)
           echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
 
       - name: Build image (only if missing)
         if: steps.exist.outputs.exists != '1'
         run: |
           docker build -f ${{ env.DOCKERFILE_PATH }} \
-            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.tagcalc.outputs.content_tag }} \
+            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.build-app.outputs.content_tag }} \
             .
 
       - name: Push image (only if missing)
         if: steps.exist.outputs.exists != '1'
         run: |
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.tagcalc.outputs.content_tag }}
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.build-app.outputs.content_tag }}
 
       - name: Point :latest at the content tag (no re-push)
         run: |
@@ -137,7 +137,7 @@ jobs:
           DIGEST=$(az acr manifest list-metadata \
             -r ${{ secrets.ACR_NAME }} \
             -n ${{ env.DOCKER_IMAGE_NAME }} \
-            --query "[?tags[?@=='${{ steps.tagcalc.outputs.content_tag }}']].digest | [0]" -o tsv)
+            --query "[?tags[?@=='${{ needs.build-app.outputs.content_tag }}']].digest | [0]" -o tsv)
           az acr import \
             --name ${{ secrets.ACR_NAME }} \
             --source ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}@${DIGEST} \
