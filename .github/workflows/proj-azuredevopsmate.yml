@@ -33,6 +33,9 @@ jobs:
     name: Build application
     runs-on: ubuntu-latest
     
+    outputs:
+      content_tag: ${{ steps.tagcalc.outputs.content_tag }}
+    
     steps:
       - uses: actions/checkout@v4
 
@@ -83,9 +86,6 @@ jobs:
     needs: [build-app]
     runs-on: ubuntu-latest
     
-    outputs:
-      sha_tag: ${{ steps.vars.outputs.sha_tag }}
-    
     permissions:
       id-token: write
       contents: read
@@ -99,17 +99,6 @@ jobs:
           name: app-publish
           path: ./publish
 
-      - name: Set image tags
-        id: vars
-        run: |
-          echo "sha_tag=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
-
-      - name: Build Docker image
-        run: |
-          docker build -f ${{ env.DOCKERFILE_PATH }} \
-            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest \
-            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }} .
-
       - name: Azure Login with OIDC
         uses: azure/login@v2
         with:
@@ -119,11 +108,41 @@ jobs:
 
       - name: Docker Login to ACR
         run: az acr login --name ${{ secrets.ACR_NAME }}
-
-      - name: Push image to ACR
+        
+      - name: Check if content tag exists in ACR
+        id: exist
         run: |
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.vars.outputs.sha_tag }}
+          set -euo pipefail
+          EXISTS=$(az acr repository show-tags \
+            -n ${{ secrets.ACR_NAME }} \
+            --repository ${{ env.DOCKER_IMAGE_NAME }} \
+            --query "[?@=='${{ steps.tagcalc.outputs.content_tag }}'] | length(@)" -o tsv)
+          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+
+      - name: Build image (only if missing)
+        if: steps.exist.outputs.exists != '1'
+        run: |
+          docker build -f ${{ env.DOCKERFILE_PATH }} \
+            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.tagcalc.outputs.content_tag }} \
+            .
+
+      - name: Push image (only if missing)
+        if: steps.exist.outputs.exists != '1'
+        run: |
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.tagcalc.outputs.content_tag }}
+
+      - name: Point :latest at the content tag (no re-push)
+        run: |
+          set -euo pipefail
+          DIGEST=$(az acr manifest list-metadata \
+            -r ${{ secrets.ACR_NAME }} \
+            -n ${{ env.DOCKER_IMAGE_NAME }} \
+            --query "[?tags[?@=='${{ steps.tagcalc.outputs.content_tag }}']].digest | [0]" -o tsv)
+          az acr import \
+            --name ${{ secrets.ACR_NAME }} \
+            --source ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}@${DIGEST} \
+            --image ${{ env.DOCKER_IMAGE_NAME }}:latest \
+            --force
 
   deploy-to-aca:
     environment: production
@@ -151,7 +170,7 @@ jobs:
           registryUrl: ${{ secrets.ACR_NAME }}.azurecr.io
           containerAppName: ${{ secrets.PROJ_AZDM_ACA_NAME }}
           resourceGroup: ${{ secrets.RG_NAME }}
-          imageToDeploy: ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.push-image.outputs.sha_tag }}
+          imageToDeploy: ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.build-app.outputs.content_tag }}
           environmentVariables: >
             APPLICATIONINSIGHTS_CONNECTION_STRING=${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
             ASPNETCORE_ENVIRONMENT=${{ secrets.ASPNETCORE_ENVIRONMENT }}
