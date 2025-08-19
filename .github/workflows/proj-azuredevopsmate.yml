@@ -48,13 +48,15 @@ jobs:
         run: dotnet build ${{ env.PATH_TO_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
         
       - name: Publish
-        run: dotnet publish ${{ env.PATH_TO_CSPROJ }} \
-          --configuration ${{ env.BUILD_CONFIGURATION }} \
-          --no-build \
-          -o ./publish \
-          /p:ContinuousIntegrationBuild=true \
-          /p:Deterministic=true
-        
+        run: |
+          dotnet publish \
+            --no-build \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -o ./publish \
+            -p:ContinuousIntegrationBuild=true \
+            -p:Deterministic=true \
+            ${{ env.PATH_TO_CSPROJ }}
+      
       - name: Compute publish-output tag
         id: tagcalc
         run: |
