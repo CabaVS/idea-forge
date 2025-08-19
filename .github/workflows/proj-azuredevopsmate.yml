@@ -61,6 +61,7 @@ jobs:
           dotnet publish \
             --no-build \
             -c ${{ env.BUILD_CONFIGURATION }} \
+            -p:ReadyToRunDeterministic=true \
             -o ./publish \
             ${{ env.PATH_TO_CSPROJ }}
 
@@ -219,9 +220,6 @@ jobs:
 
       - name: Restore
         run: dotnet restore ${{ env.PATH_TO_CSPROJ_JOBS_RWT }}
-
-      - name: Build
-        run: dotnet build ${{ env.PATH_TO_CSPROJ_JOBS_RWT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
         
       - name: Build
         run: |
@@ -237,6 +235,7 @@ jobs:
           dotnet publish \
             --no-build \
             -c ${{ env.BUILD_CONFIGURATION }} \
+            -p:ReadyToRunDeterministic=true \
             -o ./publish \
             ${{ env.PATH_TO_CSPROJ_JOBS_RWT }}
 
