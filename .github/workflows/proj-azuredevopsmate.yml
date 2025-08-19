@@ -54,6 +54,7 @@ jobs:
             -c ${{ env.BUILD_CONFIGURATION }} \
             -p:ContinuousIntegrationBuild=true \
             -p:Deterministic=true \
+            -p:EnableSourceControlManagerQueries=false \
             -p:IncludeSourceRevisionInInformationalVersion=false
       
       - name: Publish
@@ -62,6 +63,8 @@ jobs:
             --no-build \
             -c ${{ env.BUILD_CONFIGURATION }} \
             -p:ReadyToRunDeterministic=true \
+            -p:EnableSourceControlManagerQueries=false \
+            -p:IncludeSourceRevisionInInformationalVersion=false \
             -o ./publish \
             ${{ env.PATH_TO_CSPROJ }}
 
@@ -228,6 +231,7 @@ jobs:
             -c ${{ env.BUILD_CONFIGURATION }} \
             -p:ContinuousIntegrationBuild=true \
             -p:Deterministic=true \
+            -p:EnableSourceControlManagerQueries=false \
             -p:IncludeSourceRevisionInInformationalVersion=false
 
       - name: Publish
@@ -236,6 +240,8 @@ jobs:
             --no-build \
             -c ${{ env.BUILD_CONFIGURATION }} \
             -p:ReadyToRunDeterministic=true \
+            -p:EnableSourceControlManagerQueries=false \
+            -p:IncludeSourceRevisionInInformationalVersion=false \
             -o ./publish \
             ${{ env.PATH_TO_CSPROJ_JOBS_RWT }}
 
