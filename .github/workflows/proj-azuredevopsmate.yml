@@ -49,7 +49,7 @@ jobs:
 
       - name: Build
         run: dotnet build ${{ env.PATH_TO_CSPROJ }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
-        
+
       - name: Publish
         run: |
           dotnet publish \
@@ -59,7 +59,7 @@ jobs:
             -p:ContinuousIntegrationBuild=true \
             -p:Deterministic=true \
             ${{ env.PATH_TO_CSPROJ }}
-      
+
       - name: Compute publish-output tag
         id: tagcalc
         run: |
@@ -73,7 +73,7 @@ jobs:
               | awk '{print $1}'
           )
           echo "content_tag=${CONTENT_HASH:0:12}" >> "$GITHUB_OUTPUT"      
-      
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -108,7 +108,7 @@ jobs:
 
       - name: Docker Login to ACR
         run: az acr login --name ${{ secrets.ACR_NAME }}
-        
+
       - name: Check if content tag exists in ACR
         id: exist
         run: |
@@ -163,7 +163,7 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          
+
       - name: Determine if ACA needs redeploy
         id: diff
         run: |
@@ -194,10 +194,13 @@ jobs:
             ASPNETCORE_ENVIRONMENT=${{ secrets.ASPNETCORE_ENVIRONMENT }}
             AZURE_CLIENT_ID=${{ secrets.PROJ_AZDM_UAMI_CLIENT_ID }}
             CVS_CONFIGURATION_FROM_AZURE_URL=${{ secrets.PROJ_AZDM_CONFIG_URL }}
-            
+
   build-job-rwt:
     name: Build job (RWT)
     runs-on: ubuntu-latest
+
+    outputs:
+      content_tag: ${{ steps.tagcalc.outputs.content_tag }}
 
     steps:
       - uses: actions/checkout@v4
@@ -214,22 +217,40 @@ jobs:
         run: dotnet build ${{ env.PATH_TO_CSPROJ_JOBS_RWT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
       - name: Publish
-        run: dotnet publish ${{ env.PATH_TO_CSPROJ_JOBS_RWT }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build -o ./publish
+        run: |
+          dotnet publish \
+            --no-build \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -o ./publish \
+            -p:ContinuousIntegrationBuild=true \
+            -p:Deterministic=true \
+            ${{ env.PATH_TO_CSPROJ_JOBS_RWT }}
+
+      - name: Compute publish-output tag (RWT)
+        id: tagcalc
+        run: |
+          set -euo pipefail
+          CONTENT_HASH=$(
+            cd ./publish
+            find . -type f ! -name '*.pdb' -print0 \
+              | sort -z \
+              | xargs -0 sha256sum \
+              | sha256sum \
+              | awk '{print $1}'
+          )
+          echo "content_tag=${CONTENT_HASH:0:12}" >> "$GITHUB_OUTPUT"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: job-rwt-publish
           path: ./publish
-          
+  
   push-image-job-rwt:
     environment: production
     name: Push image to ACR (RWT)
     needs: [ build-job-rwt ]
     runs-on: ubuntu-latest
-
-    outputs:
-      sha_tag: ${{ steps.vars.outputs.sha_tag }}
 
     permissions:
       id-token: write
@@ -244,17 +265,6 @@ jobs:
           name: job-rwt-publish
           path: ./publish
 
-      - name: Set image tags
-        id: vars
-        run: |
-          echo "sha_tag=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
-
-      - name: Build Docker image
-        run: |
-          docker build -f ${{ env.DOCKERFILE_PATH_JOB_RWT }} \
-            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:latest \
-            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ steps.vars.outputs.sha_tag }} .
-
       - name: Azure Login with OIDC
         uses: azure/login@v2
         with:
@@ -265,16 +275,46 @@ jobs:
       - name: Docker Login to ACR
         run: az acr login --name ${{ secrets.ACR_NAME }}
 
-      - name: Push image to ACR
+      - name: Check if content tag exists in ACR (RWT)
+        id: exist
         run: |
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:latest
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ steps.vars.outputs.sha_tag }}
-          
+          set -euo pipefail
+          EXISTS=$(az acr repository show-tags \
+            -n ${{ secrets.ACR_NAME }} \
+            --repository ${{ env.DOCKER_IMAGE_NAME_JOB_RWT }} \
+            --query "[?@=='${{ needs.build-job-rwt.outputs.content_tag }}'] | length(@)" -o tsv)
+          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image (RWT, only if missing)
+        if: steps.exist.outputs.exists != '1'
+        run: |
+          docker build -f ${{ env.DOCKERFILE_PATH_JOB_RWT }} \
+            -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.build-job-rwt.outputs.content_tag }} \
+            .
+
+      - name: Push image to ACR (RWT, only if missing)
+        if: steps.exist.outputs.exists != '1'
+        run: |
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.build-job-rwt.outputs.content_tag }}
+
+      - name: Point :latest at the content tag (RWT, no re-push)
+        run: |
+          set -euo pipefail
+          DIGEST=$(az acr manifest list-metadata \
+            -r ${{ secrets.ACR_NAME }} \
+            -n ${{ env.DOCKER_IMAGE_NAME_JOB_RWT }} \
+            --query "[?tags[?@=='${{ needs.build-job-rwt.outputs.content_tag }}']].digest | [0]" -o tsv)
+          az acr import \
+            --name ${{ secrets.ACR_NAME }} \
+            --source ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}@${DIGEST} \
+            --image ${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:latest \
+            --force
+  
   deploy-to-aca-job-rwt:
     environment: production
     name: Deploy to Container Job (RWT)
-    needs: [ push-image-job-rwt ]
-      
+    needs: [ push-image-job-rwt, build-job-rwt ]
+    
     # Using Windows runner + PowerShell because ACA Job env var updates via Azure CLI are unreliable on Linux/Bash runners.
     # Verified 2025-08-08 after Linux/Bash path dropped env var values silently.
     runs-on: windows-latest
@@ -296,22 +336,43 @@ jobs:
       - name: Ensure containerapp extension is current
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           az extension add --name containerapp --yes
           az extension update --name containerapp
           az version
-          
-      - name: Update ACA Job (PowerShell quoting)
+
+      - name: Determine if CAJ (RWT) needs update
+        id: diff
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           $jobName = "${{ secrets.PROJ_AZDM_JOB_RWT_NAME }}"
           $rg = "${{ secrets.RG_NAME }}"
-          $image = "${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.push-image-job-rwt.outputs.sha_tag }}"
+          $desired = "${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.build-job-rwt.outputs.content_tag }}"
+          $current = az containerapp job show --name $jobName --resource-group $rg --query "properties.template.containers[0].image" -o tsv
+          Write-Host "Current: $current"
+          Write-Host "Desired: $desired"
+          if ($current -eq $desired) {
+            "deploy=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            "deploy=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
 
+      - name: Update ACA Job (PowerShell quoting)
+        if: steps.diff.outputs.deploy == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $jobName = "${{ secrets.PROJ_AZDM_JOB_RWT_NAME }}"
+          $rg = "${{ secrets.RG_NAME }}"
+          $image = "${{ secrets.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}:${{ needs.build-job-rwt.outputs.content_tag }}"
           $appInsights = "${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
           $clientId = "${{ secrets.PROJ_AZDM_JOB_RWT_UAMI_CLIENT_ID }}"
           $configUrl = "${{ secrets.PROJ_AZDM_CONFIG_URL }}"
           $envName = "${{ secrets.DOTNET_ENVIRONMENT }}"
-
           az containerapp job update `
             --name $jobName `
             --resource-group $rg `
