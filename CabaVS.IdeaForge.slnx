@@ -27,6 +27,7 @@
   <Folder Name="/Projects/Azure DevOps Mate/">
     <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker\CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker.csproj" Type="Classic C#" />
     <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate.Shared\CabaVS.AzureDevOpsMate.Shared.csproj" Type="Classic C#" />
+    <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate.Web\CabaVS.AzureDevOpsMate.Web.csproj" Type="Classic C#" />
     <Project Path="proj-azuredevopsmate\CabaVS.AzureDevOpsMate\CabaVS.AzureDevOpsMate.csproj" />
   </Folder>
   <Folder Name="/Shared/">

@@ -22,6 +22,13 @@ IResourceBuilder<ProjectResource> azureDevOpsMateApi = builder.AddProject<Projec
     .WithEnvironment("CVS_CONFIGURATION_FROM_AZURE_URL", configUrlForAzdm)
     .WithReference(blobsResource, "BlobStorage").WaitFor(blobsResource);
 
+// Azure DevOps Mate (Web)
+builder.AddProject<Projects.CabaVS_AzureDevOpsMate_Web>("aca-azuredevopsmate-web")
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+    .WithEnvironment("CVS_CONFIGURATION_FROM_AZURE_URL", configUrlForAzdm)
+    .WithReference(blobsResource, "BlobStorage").WaitFor(blobsResource)
+    .WithReference(azureDevOpsMateApi).WaitFor(azureDevOpsMateApi);
+
 // Azure DevOps Mate (Job - Remaining Work Tracker)
 builder.AddProject<Projects.CabaVS_AzureDevOpsMate_Jobs_RemainingWorkTracker>("acajob-azuredevopsmate-rwt")
     .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
