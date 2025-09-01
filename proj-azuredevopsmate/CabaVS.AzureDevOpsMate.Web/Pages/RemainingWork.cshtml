@@ -3,8 +3,79 @@
 
 <h1>Remaining Work Analyzer</h1>
 
+<div class="container-fluid">
+    <div id="chartsRow" class="row g-3"></div>
+</div>
+
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"
             integrity="sha256-uqjf5+HZM2uY6Jhrp+IOoV582+oe9CpZ1ZR4Yy+kWh0="
             crossorigin="anonymous"></script>
+    <script>
+        const json = {};
+        
+        const baseOption = {
+            xAxis: { data: ['A', 'B', 'C', 'D', 'E'] },
+            yAxis: {},
+            series: [
+                { data: [10, 22, 28, 43, 49], type: 'line', stack: 'x', areaStyle: {} },
+                { data: [ 5,  4,  3,  5, 10], type: 'line', stack: 'x', areaStyle: {} }
+            ]
+        };
+        
+        const slug = s => s.toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+        
+        const chartsRow = document.getElementById('chartsRow');
+        const chartInstances = [];
+    
+        function renderAll() {
+            chartsRow.innerHTML = '';
+            chartInstances.splice(0, chartInstances.length);
+
+            const sortedTeams = [...json.report].sort((a, b) =>
+                a.team.toLowerCase().localeCompare(b.team.toLowerCase())
+            );
+
+            sortedTeams.forEach((t) => {
+                const id = `chart-team-${slug(t.team) || 'unknown'}`;
+                
+                const col = document.createElement('div');
+                col.className = 'col-12 col-md-6 col-lg-4';
+    
+                // Card-ish container (optional)
+                const card = document.createElement('div');
+                card.className = 'border rounded p-2 h-100';
+    
+                // Title
+                const title = document.createElement('div');
+                title.className = 'fw-semibold small mb-2 text-truncate';
+                title.textContent = t.team;
+    
+                // Chart mount
+                const mount = document.createElement('div');
+                mount.id = id;
+                mount.style.width = '100%';
+                mount.style.height = '240px';
+    
+                card.appendChild(title);
+                card.appendChild(mount);
+                col.appendChild(card);
+                chartsRow.appendChild(col);
+    
+                // Init ECharts for this team using the same showcase option
+                const chart = echarts.init(mount, null, { renderer: 'canvas' });
+                chart.setOption(baseOption, true); // true = replace all
+                chartInstances.push(chart);
+            });
+        }
+    
+        renderAll();
+    
+        // Keep charts responsive
+        window.addEventListener('resize', () => {
+            chartInstances.forEach(c => c.resize());
+        });
+    </script>
 }
