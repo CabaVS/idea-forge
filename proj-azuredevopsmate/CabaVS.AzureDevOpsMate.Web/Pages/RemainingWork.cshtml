@@ -12,7 +12,11 @@
             integrity="sha256-uqjf5+HZM2uY6Jhrp+IOoV582+oe9CpZ1ZR4Yy+kWh0="
             crossorigin="anonymous"></script>
     <script>
-        const json = {};
+        const snapshots = @Html.Raw(Model.SnapshotsJson);
+
+        const allTeams = Array.from(new Set(
+            snapshots.flatMap(s => (s.report || []).map(r => r.team).filter(Boolean))
+        )).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
         
         const baseOption = {
             xAxis: { data: ['A', 'B', 'C', 'D', 'E'] },
@@ -22,8 +26,8 @@
                 { data: [ 5,  4,  3,  5, 10], type: 'line', stack: 'x', areaStyle: {} }
             ]
         };
-        
-        const slug = s => s.toLowerCase()
+
+        const slug = s => String(s || '').toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
         
@@ -34,12 +38,8 @@
             chartsRow.innerHTML = '';
             chartInstances.splice(0, chartInstances.length);
 
-            const sortedTeams = [...json.report].sort((a, b) =>
-                a.team.toLowerCase().localeCompare(b.team.toLowerCase())
-            );
-
-            sortedTeams.forEach((t) => {
-                const id = `chart-team-${slug(t.team) || 'unknown'}`;
+            allTeams.forEach((t) => {
+                const id = `chart-team-${slug(t) || 'unknown'}`;
                 
                 const col = document.createElement('div');
                 col.className = 'col-12 col-md-6 col-lg-4';
@@ -51,7 +51,7 @@
                 // Title
                 const title = document.createElement('div');
                 title.className = 'fw-semibold small mb-2 text-truncate';
-                title.textContent = t.team;
+                title.textContent = t;
     
                 // Chart mount
                 const mount = document.createElement('div');

@@ -2,4 +2,7 @@
   <ItemGroup>
     <Folder Include="wwwroot\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CabaVS.AzureDevOpsMate.Shared\CabaVS.AzureDevOpsMate.Shared.csproj" />
+  </ItemGroup>
 </Project>
