@@ -13,15 +13,21 @@ internal sealed class RemainingWork(
     IOptions<RemainingWorkTrackerOptions> options,
     IBlobConnectionProvider blobConnectionProvider) : PageModel
 {
+    public int WorkItemId { get; private set; }
     public string SnapshotsJson { get; private set; } = "{}";
+    public string ErrorMessage { get; private set; } = string.Empty;
     
     public async Task OnGet(int workItemId)
     {
         if (workItemId <= 0)
         {
+            ErrorMessage = "Invalid work item id!";
+            
             logger.LogWarning("Invalid work item id: {WorkItemId}", workItemId);
             return;
         }
+        
+        WorkItemId = workItemId;
         
         var blobsPrefix = $"rwt_{workItemId}_";
         var containerName = options.Value.ReportContainerName;

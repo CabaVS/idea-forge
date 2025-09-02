@@ -3,9 +3,18 @@
 
 <h1>Remaining Work Analyzer</h1>
 
-<div class="container-fluid">
-    <div id="chartsRow" class="row g-3"></div>
-</div>
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+    <h3>Work Item Id: @Model.WorkItemId</h3>
+    
+    <div class="container-fluid">
+        <div id="chartsRow" class="row g-3"></div>
+    </div>
+}
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"
