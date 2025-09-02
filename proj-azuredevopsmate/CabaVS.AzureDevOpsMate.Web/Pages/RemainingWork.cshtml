@@ -22,10 +22,70 @@ else
             crossorigin="anonymous"></script>
     <script>
         const snapshots = @Html.Raw(Model.SnapshotsJson);
+        console.log(snapshots);
 
         const allTeams = Array.from(new Set(
             snapshots.flatMap(s => (s.report || []).map(r => r.team).filter(Boolean))
         )).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
+        
+        const days = snapshots.map((_, i) => `Day ${i + 1}`);
+        
+        function getSeriesForTeam(team) {
+            const f = [], r = [], t = [], o = [];
+            snapshots.forEach(snap => {
+                const entry = (snap.report || []).find(x => x.team === team);
+                if (entry && entry.remainingWork) {
+                    const rw = entry.remainingWork;
+                    f.push(rw.functionality ?? 0);
+                    r.push(rw.requirements  ?? 0);
+                    t.push(rw.technical     ?? 0);
+                    o.push(rw.other         ?? 0);
+                } else {
+                    f.push(0); r.push(0); t.push(0); o.push(0);
+                }
+            });
+            return { f, r, t, o };
+        }
+        
+        function buildOption(team) {
+            const s = getSeriesForTeam(team);
+            return {
+                animation: false,
+                tooltip: { trigger: 'axis' },
+                grid: { left: 36, right: 12, top: 10, bottom: 60 },
+                xAxis: {
+                    type: 'category',
+                    data: days,
+                    axisLabel: {
+                        interval: Math.ceil(days.length/10) - 1,
+                        margin: 12
+                    }
+                },
+                yAxis: { type: 'value' },
+                legend: {
+                    type: 'plain',
+                    bottom: 6,
+                    orient: 'horizontal',
+                    align: 'auto',
+                    itemGap: 16,
+                    itemWidth: 14,
+                    itemHeight: 8,
+                    icon: 'roundRect',
+                    textStyle: { fontSize: 11 },
+                    data: ['Functionality', 'Requirements', 'Technical', 'Other']
+                },
+                series: [
+                    { name: 'Functionality', type: 'line', stack: 'total', areaStyle: {}, symbol: 'none',
+                        itemStyle: { color: '#1f77b4' }, data: s.f },
+                    { name: 'Requirements',  type: 'line', stack: 'total', areaStyle: {}, symbol: 'none',
+                        itemStyle: { color: '#2ca02c' }, data: s.r },
+                    { name: 'Technical',     type: 'line', stack: 'total', areaStyle: {}, symbol: 'none',
+                        itemStyle: { color: '#ffcc00' }, data: s.t },
+                    { name: 'Other',         type: 'line', stack: 'total', areaStyle: {}, symbol: 'none',
+                        itemStyle: { color: '#d62728' }, data: s.o }
+                ]
+            };
+        }
         
         const baseOption = {
             xAxis: { data: ['A', 'B', 'C', 'D', 'E'] },
@@ -75,7 +135,7 @@ else
     
                 // Init ECharts for this team using the same showcase option
                 const chart = echarts.init(mount, null, { renderer: 'canvas' });
-                chart.setOption(baseOption, true); // true = replace all
+                chart.setOption(buildOption(t), true); // stacked areas with real team data
                 chartInstances.push(chart);
             });
         }
