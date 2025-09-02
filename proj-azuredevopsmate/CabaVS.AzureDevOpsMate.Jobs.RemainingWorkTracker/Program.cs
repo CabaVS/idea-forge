@@ -1,5 +1,6 @@
 ﻿using Azure.Monitor.OpenTelemetry.Exporter;
 using CabaVS.AzureDevOpsMate.Jobs.RemainingWorkTracker;
+using CabaVS.AzureDevOpsMate.Shared;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.Shared.Infrastructure.ConfigurationProviders;
 using CabaVS.Shared.Infrastructure.Storage;
@@ -18,7 +19,7 @@ using IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         services.Configure<RemainingWorkTrackerOptions>(
-            context.Configuration.GetSection("RemainingWorkTracker"));
+            context.Configuration.GetSection(AzureDevOpsMateConstants.ConfigSectionNames.RemainingWorkTracker));
         
         services.AddOpenTelemetry()
             .ConfigureResource(_ => ResourceBuilder.CreateDefault())
@@ -52,7 +53,7 @@ using IHost host = Host.CreateDefaultBuilder(args)
             });
         
         services.AddHttpClient(
-            Constants.HttpClientNames.AcaAzureDevOpsMate,
+            AzureDevOpsMateConstants.HttpClientNames.AcaAzureDevOpsMate,
             (sp, client) =>
             {
                 IConfiguration configuration = sp.GetRequiredService<IConfiguration>();

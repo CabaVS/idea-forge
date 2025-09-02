@@ -6,9 +6,4 @@ internal static class Constants
     {
         public const string RemainingWorkTracker = "RemainingWorkTracker_ApplicationExecution";
     }
-    
-    internal static class HttpClientNames
-    {
-        public const string AcaAzureDevOpsMate = "aca-azuredevopsmate";
-    }
 }

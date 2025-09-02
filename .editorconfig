@@ -228,6 +228,9 @@ dotnet_diagnostic.CA2227.severity = suggestion
 # S125: Sections of code should not be commented out
 dotnet_diagnostic.S125.severity = suggestion
 
+# S3267: Loops should be simplified with "LINQ" expressions
+dotnet_diagnostic.S3267.severity = suggestion
+
 # S3358: Ternary operators should not be nested
 dotnet_diagnostic.S3358.severity = suggestion
 

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using Azure.Storage.Blobs;
+using CabaVS.AzureDevOpsMate.Shared;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.Shared.Infrastructure.Storage;
 using Microsoft.Extensions.Hosting;
@@ -31,7 +32,7 @@ internal sealed class Application(
             return;
         }
         
-        using HttpClient httpClient = httpClientFactory.CreateClient(Constants.HttpClientNames.AcaAzureDevOpsMate);
+        using HttpClient httpClient = httpClientFactory.CreateClient(AzureDevOpsMateConstants.HttpClientNames.AcaAzureDevOpsMate);
 
         foreach (RemainingWorkTrackerOptions.ToTrackItem item in itemsToTrack)
         {
@@ -56,7 +57,7 @@ internal sealed class Application(
             var blobName = $"rwt_{item.WorkItemId}_{DateTime.UtcNow.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}.json";
 
             BlobServiceClient blobServiceClient = blobConnectionProvider.GetBlobServiceClient();
-            BlobContainerClient? blocContainerClient = blobServiceClient.GetBlobContainerClient("proj-azuredevopsmate");
+            BlobContainerClient? blocContainerClient = blobServiceClient.GetBlobContainerClient(options.Value.ReportContainerName);
             BlobClient? blobClient = blocContainerClient.GetBlobClient(blobName);
 
             if (await blobClient.ExistsAsync(cancellationToken: cancellationToken))
