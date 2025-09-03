@@ -1,0 +1,89 @@
+﻿@page "/reported-info/{workItemId:int}"
+@model CabaVS.AzureDevOpsMate.Web.Pages.ReportedInfo
+
+<h1>Reported Info Parser</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+  <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+  <h3>Work Item Id: @Model.WorkItemId</h3>
+    
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div id="reportedPie" style="width:100%;height:560px;"></div>
+      </div>
+    </div>
+  </div>
+}
+
+@section Scripts {
+  <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"
+          integrity="sha256-uqjf5+HZM2uY6Jhrp+IOoV582+oe9CpZ1ZR4Yy+kWh0="
+          crossorigin="anonymous"></script>
+
+  <script>
+    const items = @Html.Raw(Model.ReplyJson);
+    
+    const data = (items || [])
+      .filter(x => x && x.team)
+      .map(x => ({ name: x.team, value: Number(x.total || 0) }))
+      .sort((a,b) => b.value - a.value);
+
+    const sum = data.reduce((acc, d) => acc + d.value, 0);
+    
+    const el = document.getElementById('reportedPie');
+    const chart = echarts.init(el, null, { renderer: 'canvas' });
+
+    const option = {
+      animation: false,
+      tooltip: {
+        trigger: 'item',
+        valueFormatter: v => (typeof v === 'number' ? v.toFixed(2) : v),
+        formatter: p => {
+          const pct = sum ? ((p.value / sum) * 100).toFixed(1) : '0.0';
+          return `<strong>${p.name}</strong><br/>Hours: <strong>${p.value.toFixed(2)}</strong><br/>Share: <strong>${pct}%</strong>`;
+        }
+      },
+      legend: {
+        type: 'scroll',
+        orient: 'vertical',
+        right: 12,
+        top: 20,
+        bottom: 20,
+        itemWidth: 12,
+        itemHeight: 12,
+        textStyle: { fontSize: 12 }
+      },
+      series: [{
+        name: 'Reported Hours',
+        type: 'pie',
+        radius: ['35%', '70%'],
+        center: ['45%', '50%'],
+        avoidLabelOverlap: true,
+        label: {
+          show: true,
+          formatter: params => {
+            if (!sum) return `${params.name}\n0 (0%)`;
+            const pct = ((params.value / sum) * 100).toFixed(1);
+            return `${params.name}\n${params.value.toFixed(2)} (${pct}%)`;
+          }
+        },
+        labelLine: { length: 12, length2: 8 },
+        data
+      }],
+      graphic: sum === 0 ? [{
+        type: 'text',
+        left: 'center',
+        top: 'middle',
+        style: { text: 'No reported hours', fill: '#666', fontSize: 16 }
+      }] : []
+    };
+
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
+  </script>
+}

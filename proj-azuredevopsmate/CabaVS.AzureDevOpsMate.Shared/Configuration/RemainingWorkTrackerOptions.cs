@@ -4,6 +4,7 @@ public sealed class RemainingWorkTrackerOptions
 {
     public string ApiUrlBase { get; set; } = string.Empty;
     public string ApiUrlForRemainingWork { get; set; } = string.Empty;
+    public string ApiUrlForReportedInfo { get; set; } = string.Empty;
     public string ReportContainerName { get; set; } = string.Empty;
 
     public ToTrackItem[] ToTrackItems { get; set; } = [];
