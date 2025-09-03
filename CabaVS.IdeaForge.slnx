@@ -44,5 +44,6 @@
     <File Path="global.json" />
     <File Path="proj.azuredevopsmate.Dockerfile" />
     <File Path="proj.azuredevopsmatejobrwt.Dockerfile" />
+    <File Path="proj.azuredevopsmateweb.Dockerfile" />
   </Folder>
 </Solution>
