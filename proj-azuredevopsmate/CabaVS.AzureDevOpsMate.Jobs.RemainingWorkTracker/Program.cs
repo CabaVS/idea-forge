@@ -60,7 +60,7 @@ using IHost host = Host.CreateDefaultBuilder(args)
                 IOptions<RemainingWorkTrackerOptions> options = sp.GetRequiredService<IOptions<RemainingWorkTrackerOptions>>();
 
                 client.BaseAddress = new Uri(
-                    configuration["services:aca-azuredevopsmate:https:0"]
+                    configuration[AzureDevOpsMateConstants.ConfigSectionNames.ApiBaseUrl]
                     ?? options.Value.ApiUrlBase
                 );
             });

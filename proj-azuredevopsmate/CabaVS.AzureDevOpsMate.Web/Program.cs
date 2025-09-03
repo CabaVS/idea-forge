@@ -3,6 +3,7 @@ using CabaVS.AzureDevOpsMate.Shared;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.Shared.Infrastructure.ConfigurationProviders;
 using CabaVS.Shared.Infrastructure.Storage;
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -28,6 +29,20 @@ Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .CreateLogger();
 builder.Host.UseSerilog();
+
+// Http Client
+builder.Services.AddHttpClient(
+    AzureDevOpsMateConstants.HttpClientNames.AcaAzureDevOpsMate,
+    (sp, client) =>
+    {
+        IConfiguration configuration = sp.GetRequiredService<IConfiguration>();
+        IOptions<RemainingWorkTrackerOptions> options = sp.GetRequiredService<IOptions<RemainingWorkTrackerOptions>>();
+
+        client.BaseAddress = new Uri(
+            configuration[AzureDevOpsMateConstants.ConfigSectionNames.ApiBaseUrl]
+            ?? options.Value.ApiUrlBase
+        );
+    });
 
 // Open Telemetry
 builder.Services.AddOpenTelemetry()

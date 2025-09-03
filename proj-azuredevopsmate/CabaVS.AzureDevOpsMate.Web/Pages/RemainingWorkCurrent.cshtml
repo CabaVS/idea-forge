@@ -1,0 +1,105 @@
+﻿@page "/remaining-work/{workItemId:int}/current"
+@model CabaVS.AzureDevOpsMate.Web.Pages.RemainingWorkCurrent
+
+<h1>Remaining Work - Current</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+  <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+else
+{
+  <h3>Work Item Id: @Model.WorkItemId</h3>
+    
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div id="stackedChart" style="width:100%;height:520px;"></div>
+      </div>
+    </div>
+  </div>
+}
+
+@section Scripts {
+  <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"
+          integrity="sha256-uqjf5+HZM2uY6Jhrp+IOoV582+oe9CpZ1ZR4Yy+kWh0="
+          crossorigin="anonymous"></script>
+  <script>
+    const snapshot = @Html.Raw(Model.SnapshotJson);
+
+    const teams = (snapshot.report || [])
+      .map(x => x.team)
+      .filter(Boolean)
+      .sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
+
+    const f = [], r = [], t = [], o = [];
+    const totals = [];
+    for (const team of teams) {
+      const row = snapshot.report.find(x => x.team === team) || {};
+      const rw = row.remainingWork || {};
+      const vf = Number(rw.functionality || 0);
+      const vr = Number(rw.requirements  || 0);
+      const vt = Number(rw.technical     || 0);
+      const vo = Number(rw.other         || 0);
+      f.push(vf); r.push(vr); t.push(vt); o.push(vo);
+      totals.push(vf+vr+vt+vo);
+    }
+    
+    const el = document.getElementById('stackedChart');
+    const chart = echarts.init(el, null, { renderer: 'canvas' });
+
+    const option = {
+      animation: false,
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        valueFormatter: v => (typeof v === 'number' ? v.toFixed(2) : v),
+        formatter: params => {
+          // custom tooltip: show total as well
+          const idx = params?.[0]?.dataIndex ?? 0;
+          const header = `<div style="margin-bottom:4px;"><strong>${teams[idx]}</strong></div>`;
+          const lines = params.map(p =>
+            `<div><span style="display:inline-block;margin-right:8px;border-radius:2px;width:10px;height:10px;background:${p.color}"></span>${p.seriesName}: <strong>${p.value?.toFixed?.(2) ?? p.value}</strong></div>`
+          ).join('');
+          const total = `<div style="margin-top:4px;border-top:1px solid #eee;padding-top:4px;">Total: <strong>${totals[idx].toFixed(2)}</strong></div>`;
+          return header + lines + total;
+        }
+      },
+      grid: { left: 48, right: 16, top: 18, bottom: 80 },
+      legend: {
+        bottom: 10,
+        itemWidth: 14,
+        itemHeight: 8,
+        itemGap: 16,
+        icon: 'roundRect',
+        textStyle: { fontSize: 12 },
+        data: ['Functionality','Requirements','Technical','Other']
+      },
+      xAxis: {
+        type: 'category',
+        data: teams,
+        axisLabel: {
+          interval: 0,
+          rotate: 35,
+          margin: 14
+        }
+      },
+      yAxis: {
+        type: 'value',
+        name: 'Hours',
+        nameGap: 12,
+        splitLine: { show: true }
+      },
+      series: [
+        { name: 'Functionality', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, itemStyle: { color: '#1f77b4' }, data: f },
+        { name: 'Requirements',  type: 'bar', stack: 'total', emphasis: { focus: 'series' }, itemStyle: { color: '#2ca02c' }, data: r },
+        { name: 'Technical',     type: 'bar', stack: 'total', emphasis: { focus: 'series' }, itemStyle: { color: '#ffcc00' }, data: t },
+        { name: 'Other',         type: 'bar', stack: 'total', emphasis: { focus: 'series' }, itemStyle: { color: '#d62728' }, data: o }
+      ]
+    };
+
+    chart.setOption(option);
+    
+    window.addEventListener('resize', () => chart.resize());
+  </script>
+}

@@ -16,7 +16,7 @@ internal sealed partial class RemainingWork(
     IBlobConnectionProvider blobConnectionProvider) : PageModel
 {
     public int WorkItemId { get; private set; }
-    public string SnapshotsJson { get; private set; } = "{}";
+    public string SnapshotsJson { get; private set; } = "[]";
     public string ErrorMessage { get; private set; } = string.Empty;
     
     public async Task OnGet(int workItemId)
