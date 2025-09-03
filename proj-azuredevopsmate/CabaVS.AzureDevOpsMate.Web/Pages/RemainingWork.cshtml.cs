@@ -1,4 +1,6 @@
-﻿using Azure;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
@@ -8,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace CabaVS.AzureDevOpsMate.Web.Pages;
 
-internal sealed class RemainingWork(
+internal sealed partial class RemainingWork(
     ILogger<RemainingWork> logger,
     IOptions<RemainingWorkTrackerOptions> options,
     IBlobConnectionProvider blobConnectionProvider) : PageModel
@@ -38,9 +40,15 @@ internal sealed class RemainingWork(
         BlobServiceClient blobServiceClient = blobConnectionProvider.GetBlobServiceClient();
         BlobContainerClient? blobContainerClient = blobServiceClient.GetBlobContainerClient(containerName);
         
-        var allSnapshots = new List<string>();
+        var augmented = new List<(DateTime date, string json)>();
         await foreach (BlobItem blobItem in blobContainerClient.GetBlobsAsync(prefix: blobsPrefix))
         {
+            if (!TryExtractIsoDateFromBlobName(blobItem.Name, out DateTime dt, out var iso))
+            {
+                logger.LogWarning("Blob name does not contain a yyyyMMdd stamp: {BlobName}", blobItem.Name);
+                continue;
+            }
+            
             BlobClient blobClient = blobContainerClient.GetBlobClient(blobItem.Name);
             
             Response<BlobDownloadResult>? downloadResponse = await blobClient.DownloadContentAsync();
@@ -54,9 +62,42 @@ internal sealed class RemainingWork(
             logger.LogInformation("Downloaded blob {BlobName}, Content length: {Length}",
                 blobItem.Name, text.Length);
             
-            allSnapshots.Add(text);
+            var trimmed = text.Trim();
+            if (!(trimmed.StartsWith('{') && trimmed.EndsWith('}')))
+            {
+                logger.LogWarning("Blob {BlobName} content is not a single JSON object", blobItem.Name);
+                continue;
+            }
+            
+            var withDate = $"{{\"date\":\"{iso}\",{trimmed[1..]}";
+            augmented.Add((dt, withDate));
         }
         
-        SnapshotsJson = $"[{string.Join(',', allSnapshots)}]";
+        SnapshotsJson = "[" + string.Join(',', augmented.OrderBy(x => x.date).Select(x => x.json)) + "]";
     }
+    
+    private static bool TryExtractIsoDateFromBlobName(string blobName, out DateTime date, out string isoDate)
+    {
+        Match m = DateFromBlobNameRegex().Match(blobName);
+        if (!m.Success)
+        {
+            date = default;
+            isoDate = "";
+            return false;
+        }
+
+        var stamp = m.Groups[1].Value;
+        if (!DateTime.TryParseExact(stamp, "yyyyMMdd", CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out date))
+        {
+            isoDate = "";
+            return false;
+        }
+        
+        isoDate = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return true;
+    }
+
+    [GeneratedRegex(@"_(\d{8})(?:\.\w+)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex DateFromBlobNameRegex();
 }

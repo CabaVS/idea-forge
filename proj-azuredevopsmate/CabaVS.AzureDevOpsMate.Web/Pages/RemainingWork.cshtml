@@ -27,8 +27,9 @@ else
         const allTeams = Array.from(new Set(
             snapshots.flatMap(s => (s.report || []).map(r => r.team).filter(Boolean))
         )).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
-        
-        const days = snapshots.map((_, i) => `Day ${i + 1}`);
+
+        const days = snapshots.map(s => new Date(s.date + 'T00:00:00Z')
+            .toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
         
         function getSeriesForTeam(team) {
             const f = [], r = [], t = [], o = [];
