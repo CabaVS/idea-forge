@@ -129,12 +129,21 @@ jobs:
         id: exist
         run: |
           set -euo pipefail
-          EXISTS=$(az acr repository show-tags \
-            -n ${{ secrets.ACR_NAME }} \
-            --repository ${{ env.DOCKER_IMAGE_NAME }} \
-            --query "[?@=='${{ needs.build-app.outputs.content_tag }}'] | length(@)" -o tsv)
-          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+          REPO="${{ env.DOCKER_IMAGE_NAME }}"
+          TAG="${{ needs.build-app.outputs.content_tag }}"
 
+          if az acr repository show -n ${{ secrets.ACR_NAME }} --repository "$REPO" >/dev/null 2>&1; then
+            EXISTS=$(az acr repository show-tags \
+              -n ${{ secrets.ACR_NAME }} \
+              --repository "$REPO" \
+              --query "[?@=='$TAG'] | length(@)" -o tsv)
+          else
+            echo "Repository $REPO does not exist yet; will build & push."
+            EXISTS=0
+          fi
+
+          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+      
       - name: Build image (only if missing)
         if: steps.exist.outputs.exists != '1'
         run: |
@@ -306,12 +315,21 @@ jobs:
         id: exist
         run: |
           set -euo pipefail
-          EXISTS=$(az acr repository show-tags \
-            -n ${{ secrets.ACR_NAME }} \
-            --repository ${{ env.DOCKER_IMAGE_NAME_WEB }} \
-            --query "[?@=='${{ needs.build-web.outputs.content_tag }}'] | length(@)" -o tsv)
-          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+          REPO="${{ env.DOCKER_IMAGE_NAME_WEB }}"
+          TAG="${{ needs.build-web.outputs.content_tag }}"
 
+          if az acr repository show -n ${{ secrets.ACR_NAME }} --repository "$REPO" >/dev/null 2>&1; then
+            EXISTS=$(az acr repository show-tags \
+              -n ${{ secrets.ACR_NAME }} \
+              --repository "$REPO" \
+              --query "[?@=='$TAG'] | length(@)" -o tsv)
+          else
+            echo "Repository $REPO does not exist yet; will build & push."
+            EXISTS=0
+          fi
+
+          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+      
       - name: Build image (only if missing)
         if: steps.exist.outputs.exists != '1'
         run: |
@@ -483,12 +501,21 @@ jobs:
         id: exist
         run: |
           set -euo pipefail
-          EXISTS=$(az acr repository show-tags \
-            -n ${{ secrets.ACR_NAME }} \
-            --repository ${{ env.DOCKER_IMAGE_NAME_JOB_RWT }} \
-            --query "[?@=='${{ needs.build-job-rwt.outputs.content_tag }}'] | length(@)" -o tsv)
-          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+          REPO="${{ env.DOCKER_IMAGE_NAME_JOB_RWT }}"
+          TAG="${{ needs.build-job-rwt.outputs.content_tag }}"
 
+          if az acr repository show -n ${{ secrets.ACR_NAME }} --repository "$REPO" >/dev/null 2>&1; then
+            EXISTS=$(az acr repository show-tags \
+              -n ${{ secrets.ACR_NAME }} \
+              --repository "$REPO" \
+              --query "[?@=='$TAG'] | length(@)" -o tsv)
+          else
+            echo "Repository $REPO does not exist yet; will build & push."
+            EXISTS=0
+          fi
+
+          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+      
       - name: Build Docker image (RWT, only if missing)
         if: steps.exist.outputs.exists != '1'
         run: |
