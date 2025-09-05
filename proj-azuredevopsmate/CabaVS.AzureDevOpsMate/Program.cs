@@ -1,10 +1,10 @@
 using System.Globalization;
-using System.Xml.Linq;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using CabaVS.AzureDevOpsMate.Constants;
 using CabaVS.AzureDevOpsMate.Shared.Configuration;
 using CabaVS.AzureDevOpsMate.Shared.Models;
 using CabaVS.Shared.Infrastructure.ConfigurationProviders;
+using HtmlAgilityPack;
 using Microsoft.Extensions.Options;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -124,16 +124,22 @@ app.MapGet(
         logger.LogInformation("Processing reporting info for WorkItemId: {WorkItemId}", workItemId);
 
         var sanitizedHtml = reportingInfo.Replace("&nbsp;", " ", StringComparison.InvariantCulture);
-        var parsed = XDocument.Parse(sanitizedHtml)
-            .Descendants("tr")
-            .Select(tr => tr.Elements("td").Select(td => td.Value.Trim()).ToArray())
+        
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(sanitizedHtml);
+        
+        var parsed = htmlDoc.DocumentNode.SelectNodes("//tr")
+            .Select(tr => tr
+                .SelectNodes("./td")
+                .Select(td => td.InnerText.Replace('\u00A0', ' ').Trim())
+                .ToArray())
             .Where(row => row is { Length: 4 })
+            .Where(row => row.Any(x => !string.IsNullOrWhiteSpace(x)))
             .Select(row => new
             {
                 Date = DateOnly.ParseExact(row[0], "dd.MM.yyyy", CultureInfo.InvariantCulture),
                 Reporter = row[1],
-                Amount = double.Parse(row[2].Replace(",", ".", StringComparison.InvariantCulture),
-                    CultureInfo.InvariantCulture),
+                Amount = double.Parse(row[2].Replace(",", ".", StringComparison.InvariantCulture), CultureInfo.InvariantCulture),
                 Comment = row[3]
             });
 
